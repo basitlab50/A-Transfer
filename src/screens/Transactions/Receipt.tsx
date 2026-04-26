@@ -189,7 +189,7 @@ const ReceiptScreen = ({ route, navigation }: any) => {
         <AppButton 
           title="Done" 
           variant="accent" 
-          onPress={() => navigation.popToTop()} 
+          onPress={() => navigation.goBack()} 
           className="mb-20"
         />
       </ScrollView>
