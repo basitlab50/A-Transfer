@@ -404,32 +404,37 @@ const AdminDashboard = ({ navigation }: any) => {
       </Modal>
 
       {/* Global Settings Modal */}
-      <Modal visible={isSettingsOpen} animationType="fade" transparent>
-        <View className="flex-1 justify-center bg-black/80 px-6">
-          <Animated.View entering={FadeInUp} className="bg-primary rounded-[40px] p-8 border border-slate-800">
-            <View className="flex-row items-center mb-8">
+      <Modal visible={isSettingsOpen} animationType="slide" transparent>
+        <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 20 }}>
+          <View style={{ backgroundColor: '#0A192F', borderRadius: 40, padding: 30, borderWidth: 1, borderColor: '#1E293B' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 30 }}>
               <Globe color="#eab308" size={24} />
-              <Text className="text-textPrimary text-2xl font-bold ml-3">System Controls</Text>
+              <Text style={{ color: '#F8FAFC', fontSize: 24, fontWeight: 'bold', marginLeft: 15 }}>System Controls</Text>
             </View>
-            <Text className="text-textSecondary text-xs font-bold uppercase tracking-widest mb-6">Exchange Rates (1 A = ...)</Text>
-            {Object.keys(rates).map(country => (
-              <View key={country} className="flex-row items-center mb-4 bg-surface p-4 rounded-2xl border border-slate-800">
-                <Text className="text-textPrimary font-bold flex-1">{country}</Text>
-                <TextInput 
-                  className="bg-primary px-4 py-2 rounded-xl text-accent font-bold w-32 text-right"
-                  keyboardType="numeric"
-                  value={String(rates[country])}
-                  onChangeText={(val) => setRates({...rates, [country]: parseFloat(val) || 0})}
-                />
-              </View>
-            ))}
-            <View className="mt-8 space-y-4">
+
+            <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 20, letterSpacing: 1 }}>Exchange Rates (1 A = ...)</Text>
+            
+            <ScrollView style={{ maxHeight: 300 }}>
+              {rates && Object.keys(rates).map(country => (
+                <View key={country} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
+                  <Text style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1 }}>{country}</Text>
+                  <TextInput 
+                    style={{ backgroundColor: '#0A192F', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12, color: '#76b33a', fontWeight: 'bold', width: 120, textAlign: 'right' }}
+                    keyboardType="numeric"
+                    value={String(rates[country])}
+                    onChangeText={(val) => setRates({...rates, [country]: parseFloat(val) || 0})}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={{ marginTop: 30 }}>
               <AppButton title="Save Platform Rates" variant="accent" onPress={handleUpdateRates} />
-              <TouchableOpacity onPress={() => setIsSettingsOpen(false)} className="py-4 rounded-2xl border border-slate-800">
-                <Text className="text-textSecondary text-center font-bold">Cancel</Text>
+              <TouchableOpacity onPress={() => setIsSettingsOpen(false)} style={{ marginTop: 15, paddingVertical: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
+                <Text style={{ color: '#94A3B8', textAlign: 'center', fontWeight: 'bold' }}>Cancel</Text>
               </TouchableOpacity>
             </View>
-          </Animated.View>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
