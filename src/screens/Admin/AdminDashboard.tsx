@@ -434,17 +434,32 @@ const AdminDashboard = ({ navigation }: any) => {
               </View>
               
               <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }} horizontal={false} bounces={false}>
-              <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 15, letterSpacing: 1 }}>User Exchange Rates (1 A = ...)</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>Base Exchange Rates (1 USD = ...)</Text>
+                <View className="bg-accent/10 px-2 py-0.5 rounded-md">
+                  <Text style={{ color: '#76b33a', fontSize: 8, fontWeight: 'bold' }}>AUTO-CALC ACTIVE</Text>
+                </View>
+              </View>
+
               {rates && Object.keys(rates).map(country => (
-                <View key={country} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
-                  <Text numberOfLines={1} style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1, fontSize: 14, marginRight: 10 }}>{country}</Text>
-                  <View style={{ backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 12, width: 100 }}>
-                    <TextInput 
-                      style={{ paddingVertical: 8, color: '#76b33a', fontWeight: 'bold', textAlign: 'right', fontSize: 14 }}
-                      keyboardType="numeric"
-                      value={String(rates[country])}
-                      onChangeText={(val) => setRates({...rates, [country]: parseFloat(val) || 0})}
-                    />
+                <View key={country} style={{ marginBottom: 12, backgroundColor: '#112240', padding: 15, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <Text style={{ color: '#F8FAFC', fontWeight: 'bold', fontSize: 14 }}>{country}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 12, width: 100 }}>
+                      <TextInput 
+                        style={{ paddingVertical: 6, color: '#94A3B8', fontWeight: 'bold', textAlign: 'right', fontSize: 13 }}
+                        keyboardType="numeric"
+                        value={String(rates[country])}
+                        onChangeText={(val) => setRates({...rates, [country]: parseFloat(val) || 0})}
+                      />
+                    </View>
+                  </View>
+                  
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 10 }}>
+                    <Text style={{ color: '#64748B', fontSize: 10 }}>Merchant Pays (Local):</Text>
+                    <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}>
+                      {((rates[country] || 0) * (mBuyRate || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </Text>
                   </View>
                 </View>
               ))}
