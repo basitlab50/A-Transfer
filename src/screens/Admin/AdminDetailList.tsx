@@ -7,7 +7,8 @@ import {
   ShoppingBag, 
   CreditCard,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Home
 } from 'lucide-react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 
@@ -76,8 +77,8 @@ const AdminDetailList = ({ route, navigation }: any) => {
               <Text style={styles.headerTitle}>{titles[type] || 'Platform Data'}</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('AdminDashboard')} style={styles.iconBtn}>
-            <ShieldCheck color="#eab308" size={24} />
+          <TouchableOpacity onPress={() => navigation.navigate('Dashboard')} style={styles.iconBtn}>
+            <Home color="#eab308" size={24} />
           </TouchableOpacity>
         </View>
 

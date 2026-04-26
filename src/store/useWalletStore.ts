@@ -75,6 +75,7 @@ interface WalletState {
   isKYCVerified: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isAdminMode: boolean;
   userProfile: { name: string, email: string, aid: string, phone: string, country: string } | null;
   merchantStatus: 'none' | 'pending' | 'approved' | 'declined';
   activeTransaction: any | null;
@@ -91,6 +92,7 @@ interface WalletState {
   withdrawToMerchant: (amount: number, merchantId: string) => void;
   setUserCountry: (country: string) => void;
   toggleMerchantMode: () => void;
+  toggleAdminMode: () => void;
   toggleOnlineStatus: () => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string, phone: string, country: string) => Promise<void>;
@@ -144,6 +146,7 @@ export const useWalletStore = create<WalletState>((set) => ({
   isKYCVerified: false,
   isAuthenticated: false,
   isAdmin: false,
+  isAdminMode: false,
   userProfile: null,
   merchantStatus: 'none',
   pendingRequests: [],
@@ -178,6 +181,7 @@ export const useWalletStore = create<WalletState>((set) => ({
   },
   setUserCountry: (countryName) => set({ userCountry: countryName }),
   toggleMerchantMode: () => set((state) => ({ isMerchantMode: !state.isMerchantMode })),
+  toggleAdminMode: () => set((state) => ({ isAdminMode: !state.isAdminMode })),
   toggleOnlineStatus: () => set((state) => ({ isOnline: !state.isOnline })),
   signIn: async (email, password) => {
     try {

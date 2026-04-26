@@ -32,7 +32,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AdminDashboard = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
-  const { fetchAllUsers, updateUserStatus, allocateCredits, systemSettings, updateGlobalSettings } = useWalletStore();
+  const { fetchAllUsers, updateUserStatus, allocateCredits, systemSettings, updateGlobalSettings, toggleAdminMode } = useWalletStore();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -145,11 +145,11 @@ const AdminDashboard = ({ navigation }: any) => {
             <TouchableOpacity 
               onPress={() => {
                 setIsModeMenuOpen(false);
-                navigation.navigate('Dashboard');
+                toggleAdminMode();
               }}
               className="flex-row items-center p-3 rounded-xl hover:bg-primary"
             >
-              <LayoutDashboard color="#94A3B8" size={16} />
+              <User color="#94A3B8" size={16} />
               <Text className="text-textSecondary font-bold ml-3">User Mode</Text>
             </TouchableOpacity>
             <TouchableOpacity 

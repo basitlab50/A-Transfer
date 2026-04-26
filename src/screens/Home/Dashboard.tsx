@@ -15,7 +15,7 @@ interface Props {
 }
 
 const Dashboard = ({ navigation }: Props) => {
-  const { balance, userCountry, availableCountries, transactions, toggleMerchantMode, isKYCVerified, userProfile, signOut, merchantStatus, isAdmin, activeTransaction, notifications, resetMerchantStatus } = useWalletStore();
+  const { balance, userCountry, availableCountries, transactions, toggleMerchantMode, toggleAdminMode, isKYCVerified, userProfile, signOut, merchantStatus, isAdmin, activeTransaction, notifications, resetMerchantStatus } = useWalletStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -181,7 +181,7 @@ const Dashboard = ({ navigation }: Props) => {
                       className="flex-row items-center py-2 mb-4"
                       onPress={() => {
                         setIsMenuOpen(false);
-                        navigation.navigate('AdminDashboard');
+                        toggleAdminMode();
                       }}
                     >
                       <ShieldCheck color="#eab308" size={16} />

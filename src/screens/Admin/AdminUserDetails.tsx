@@ -10,7 +10,8 @@ import {
   ArrowDownLeft,
   ShieldCheck,
   ShoppingBag,
-  Clock
+  Clock,
+  Home
 } from 'lucide-react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 import { db } from '../../config/firebase';
@@ -33,10 +34,10 @@ const AdminUserDetails = ({ route, navigation }: any) => {
   // Use ShieldCheck for admin home navigation
   const AdminHomeIcon = () => (
     <TouchableOpacity 
-      onPress={() => navigation.navigate('AdminDashboard')}
+      onPress={() => navigation.navigate('Dashboard')}
       style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#1E293B', alignItems: 'center', justifyContent: 'center' }}
     >
-      <ShieldCheck color="#eab308" size={20} />
+      <Home color="#eab308" size={20} />
     </TouchableOpacity>
   );
 

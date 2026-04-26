@@ -7,7 +7,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Clock,
-  LayoutDashboard
+  Home
 } from 'lucide-react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 
@@ -129,8 +129,8 @@ const AdminMerchantRequests = ({ route, navigation }: any) => {
             {countryParam ? countryParam : 'Merchant Portal'}
           </Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('AdminDashboard')} style={styles.iconBtn}>
-          <ShieldCheck color="#eab308" size={24} />
+        <TouchableOpacity onPress={() => navigation.navigate('Dashboard')} style={styles.iconBtn}>
+          <Home color="#eab308" size={24} />
         </TouchableOpacity>
       </View>
 
