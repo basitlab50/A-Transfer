@@ -45,10 +45,14 @@ const AdminDashboard = ({ navigation }: any) => {
   const [creditType, setCreditType] = useState<'balance' | 'inventory'>('balance');
   
   const [rates, setRates] = useState(systemSettings.exchangeRates);
+  const [mBuyRate, setMBuyRate] = useState(systemSettings.merchantBuyRate || 0);
+  const [mSellRange, setMSellRange] = useState(systemSettings.merchantSellRange || { min: 0, max: 0 });
 
   useEffect(() => {
     loadUsers();
     setRates(systemSettings.exchangeRates);
+    setMBuyRate(systemSettings.merchantBuyRate);
+    setMSellRange(systemSettings.merchantSellRange);
   }, [systemSettings]);
 
   const loadUsers = async () => {
@@ -87,11 +91,15 @@ const AdminDashboard = ({ navigation }: any) => {
 
   const handleUpdateRates = async () => {
     try {
-      await updateGlobalSettings({ exchangeRates: rates });
-      Alert.alert('Success', 'Global exchange rates updated!');
+      await updateGlobalSettings({ 
+        exchangeRates: rates,
+        merchantBuyRate: mBuyRate,
+        merchantSellRange: mSellRange
+      });
+      Alert.alert('Success', 'Global settings updated!');
       setIsSettingsOpen(false);
     } catch (err) {
-      Alert.alert('Error', 'Failed to update rates');
+      Alert.alert('Error', 'Failed to update settings');
     }
   };
 
@@ -411,10 +419,9 @@ const AdminDashboard = ({ navigation }: any) => {
               <Globe color="#eab308" size={24} />
               <Text style={{ color: '#F8FAFC', fontSize: 24, fontWeight: 'bold', marginLeft: 15 }}>System Controls</Text>
             </View>
-
-            <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 20, letterSpacing: 1 }}>Exchange Rates (1 A = ...)</Text>
             
-            <ScrollView style={{ maxHeight: 300 }}>
+            <ScrollView style={{ maxHeight: 400 }}>
+              <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 15, letterSpacing: 1 }}>User Exchange Rates (1 A = ...)</Text>
               {rates && Object.keys(rates).map(country => (
                 <View key={country} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
                   <Text style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1 }}>{country}</Text>
@@ -426,6 +433,41 @@ const AdminDashboard = ({ navigation }: any) => {
                   />
                 </View>
               ))}
+
+              <View style={{ height: 1, backgroundColor: '#1E293B', marginVertical: 20 }} />
+
+              <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 15, letterSpacing: 1 }}>Merchant Purchase Price</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
+                <Text style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1 }}>Buy A-Credit Rate</Text>
+                <TextInput 
+                  style={{ backgroundColor: '#0A192F', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12, color: '#eab308', fontWeight: 'bold', width: 120, textAlign: 'right' }}
+                  keyboardType="numeric"
+                  value={String(mBuyRate)}
+                  onChangeText={(val) => setMBuyRate(parseFloat(val) || 0)}
+                />
+              </View>
+
+              <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 15, letterSpacing: 1 }}>Global Merchant Sell Range</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={{ width: '48%', backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 5 }}>MIN RATE</Text>
+                  <TextInput 
+                    style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16 }}
+                    keyboardType="numeric"
+                    value={String(mSellRange.min)}
+                    onChangeText={(val) => setMSellRange({...mSellRange, min: parseFloat(val) || 0})}
+                  />
+                </View>
+                <View style={{ width: '48%', backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 5 }}>MAX RATE</Text>
+                  <TextInput 
+                    style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}
+                    keyboardType="numeric"
+                    value={String(mSellRange.max)}
+                    onChangeText={(val) => setMSellRange({...mSellRange, max: parseFloat(val) || 0})}
+                  />
+                </View>
+              </View>
             </ScrollView>
 
             <View style={{ marginTop: 30 }}>

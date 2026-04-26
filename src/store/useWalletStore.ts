@@ -157,6 +157,11 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       'Kenya': 155,
       'South Africa': 19.2
     },
+    merchantBuyRate: 14.5,
+    merchantSellRange: {
+      min: 14.0,
+      max: 15.0
+    },
     maintenanceMode: false
   },
   
