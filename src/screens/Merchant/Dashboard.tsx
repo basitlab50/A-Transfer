@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   AlertCircle,
   RefreshCcw,
-  CreditCard
+  CreditCard,
+  History
 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useWalletStore } from '../../store/useWalletStore';
@@ -275,8 +276,83 @@ const MerchantDashboard = ({ navigation }: any) => {
           ))}
         </View>
 
-        {/* Peer Requests Section */}
         <View className="flex-row justify-between items-center mb-6">
+          <Text className="text-textPrimary text-xl font-bold tracking-tight">Merchant Services</Text>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6 mb-10">
+          {[
+            { icon: <Package color="#76b33a" size={22} />, label: 'Restock', action: () => navigation.navigate('MerchantRestock') },
+            { icon: <TrendingUp color="#eab308" size={22} />, label: 'Market', action: () => {} },
+            { icon: <Clock color="#94a3b8" size={22} />, label: 'History', action: () => navigation.navigate('History') },
+            { icon: <ShieldCheck color="#76b33a" size={22} />, label: 'KYC' },
+          ].map((item, index) => (
+            <View key={index} className="mr-6 items-center">
+              <TouchableOpacity 
+                onPress={item.action}
+                className="bg-surface w-16 h-16 rounded-[24px] border border-card-border items-center justify-center mb-3"
+              >
+                {item.icon}
+              </TouchableOpacity>
+              <Text className="text-textSecondary text-[11px] font-bold uppercase tracking-wider">{item.label}</Text>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Transaction Feed */}
+        <View className="flex-row justify-between items-center mb-6">
+          <Text className="text-textPrimary text-xl font-bold tracking-tight">Recent Activity</Text>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('History')}
+            className="flex-row items-center"
+          >
+            <Text className="text-accent text-sm font-bold mr-1">Activity Log</Text>
+            <ChevronRight color="#76b33a" size={16} />
+          </TouchableOpacity>
+        </View>
+
+        {useWalletStore.getState().merchantTransactions.length === 0 ? (
+          <View className="bg-surface/40 p-8 rounded-[28px] border border-card-border/30 items-center">
+            <Clock color="#475569" size={32} />
+            <Text className="text-textSecondary text-sm mt-3 font-medium">No recent merchant activity</Text>
+          </View>
+        ) : (
+          useWalletStore.getState().merchantTransactions.slice(0, 3).map((tx: any) => {
+            const isDeposit = tx.type === 'deposit';
+            return (
+              <TouchableOpacity 
+                key={tx.id} 
+                onPress={() => navigation.navigate('Receipt', { transaction: tx })}
+                className="flex-row items-center bg-surface/40 p-5 rounded-[28px] mb-4 border border-card-border/30"
+              >
+                <View className={`w-14 h-14 rounded-2xl items-center justify-center mr-4 ${isDeposit ? 'bg-accent/10' : 'bg-red-500/10'}`}>
+                  {isDeposit ? 
+                    <ArrowDownLeft color="#76b33a" size={24} /> : 
+                    <ArrowUpRight color="#EF4444" size={24} />
+                  }
+                </View>
+                <View className="flex-1">
+                  <Text className="text-textPrimary font-bold text-[15px] mb-0.5" numberOfLines={1}>
+                    {isDeposit ? 'Credit Sale' : 'Inventory Purchase'}
+                  </Text>
+                  <Text className="text-textSecondary text-xs font-medium">{tx.date || new Date(tx.timestamp).toLocaleDateString()}</Text>
+                </View>
+                <View className="items-end">
+                  <Text className={`font-bold text-lg ${isDeposit ? 'text-accent' : 'text-textPrimary'}`}>
+                    {isDeposit ? '+' : '-'}A {tx.amount}
+                  </Text>
+                  <View className={`px-2 py-0.5 rounded-full mt-1 bg-accent/10`}>
+                     <Text className={`text-[9px] uppercase font-bold tracking-wider text-accent`}>
+                      {tx.status}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
+
+        {/* Peer Requests Section */}
+        <View className="mt-6 flex-row justify-between items-center mb-6">
           <Text className="text-textPrimary text-xl font-bold tracking-tight">Active Peer Requests</Text>
           <View className="bg-orange/20 px-2 py-1 rounded-md">
             <Text className="text-orange text-[10px] font-bold">2 NEW</Text>

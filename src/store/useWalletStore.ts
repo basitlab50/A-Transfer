@@ -87,6 +87,7 @@ interface WalletState {
     maintenanceMode: boolean;
   };
   notifications: AppNotification[];
+  merchantTransactions: any[];
   // Actions
   completeKYC: () => void;
   increaseInventory: (amount: number) => void;
@@ -153,6 +154,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   merchantStatus: 'none',
   pendingRequests: [],
   notifications: [],
+  merchantTransactions: [],
   systemSettings: {
     exchangeRates: {
       'Ghana': 12.5,
@@ -475,6 +477,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     let unsubscribeProfile: (() => void) | null = null;
     let unsubscribeActiveTx: (() => void) | null = null;
     let unsubscribeHistory: (() => void) | null = null;
+    let unsubscribeMerchantHistory: (() => void) | null = null;
     let unsubscribeNotifications: (() => void) | null = null;
 
     onAuthStateChanged(auth, async (user) => {
@@ -581,6 +584,20 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           set({ transactions: txs });
         });
 
+        // Listen to merchant transaction history
+        const qMerchantHistory = query(
+          collection(db, 'ongoing_transactions'),
+          where('merchantId', '==', user.uid),
+          where('status', 'in', ['completed', 'archived'])
+        );
+
+        unsubscribeMerchantHistory = onSnapshot(qMerchantHistory, (snapshot) => {
+          const txs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          // Sort by timestamp desc
+          txs.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          set({ merchantTransactions: txs });
+        });
+
         // Listen to notifications
         const qNotify = collection(db, 'users', user.uid, 'notifications');
         unsubscribeNotifications = onSnapshot(qNotify, (snapshot) => {
@@ -595,6 +612,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         if (unsubscribeProfile) unsubscribeProfile();
         if (unsubscribeActiveTx) unsubscribeActiveTx();
         if (unsubscribeHistory) unsubscribeHistory();
+        if (unsubscribeMerchantHistory) unsubscribeMerchantHistory();
         if (unsubscribeNotifications) unsubscribeNotifications();
         set({ 
           isAuthenticated: false, 
