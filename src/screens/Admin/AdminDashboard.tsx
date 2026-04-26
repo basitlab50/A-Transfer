@@ -452,39 +452,40 @@ const AdminDashboard = ({ navigation }: any) => {
               <View style={{ height: 1, backgroundColor: '#1E293B', marginVertical: 20 }} />
 
               <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 15, letterSpacing: 1 }}>Merchant Purchase Price</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
-                <Text numberOfLines={1} style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1, fontSize: 14, marginRight: 10 }}>Buy A-Credit Rate</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 12, width: 100 }}>
-                  <Text style={{ color: '#eab308', fontWeight: 'bold', fontSize: 14 }}>$</Text>
+              <View style={{ backgroundColor: '#112240', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B', marginBottom: 15 }}>
+                <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginBottom: 10, letterSpacing: 0.5 }}>PLATFORM SELLING RATE (USD)</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 15, borderRadius: 16 }}>
+                  <Text style={{ color: '#eab308', fontWeight: 'bold', fontSize: 18 }}>$</Text>
                   <TextInput 
-                    style={{ flex: 1, paddingVertical: 8, color: '#eab308', fontWeight: 'bold', textAlign: 'right', fontSize: 14 }}
+                    style={{ flex: 1, paddingVertical: 15, color: '#eab308', fontWeight: 'bold', textAlign: 'right', fontSize: 20 }}
                     keyboardType="numeric"
                     value={String(mBuyRate)}
                     onChangeText={(val) => setMBuyRate(parseFloat(val) || 0)}
                   />
                 </View>
+                <Text style={{ color: '#475569', fontSize: 10, marginTop: 10, italic: true }}>* This is the price merchants pay the platform per A-Credit.</Text>
               </View>
 
               <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 15, letterSpacing: 1 }}>Global Merchant Sell Range</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={{ width: '48%', backgroundColor: '#112240', padding: 12, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
-                  <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 8 }}>MIN RATE</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 8, borderRadius: 12, width: '100%' }}>
-                    <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 14 }}>$</Text>
+                <View style={{ width: '48%', backgroundColor: '#112240', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginBottom: 10 }}>MIN RATE</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 16, width: '100%' }}>
+                    <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16 }}>$</Text>
                     <TextInput 
-                      style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 14, flex: 1, paddingVertical: 8, textAlign: 'right' }}
+                      style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 18, flex: 1, paddingVertical: 12, textAlign: 'right' }}
                       keyboardType="numeric"
                       value={String(mSellRange.min)}
                       onChangeText={(val) => setMSellRange({...mSellRange, min: parseFloat(val) || 0})}
                     />
                   </View>
                 </View>
-                <View style={{ width: '48%', backgroundColor: '#112240', padding: 12, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
-                  <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 8 }}>MAX RATE</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 8, borderRadius: 12, width: '100%' }}>
-                    <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 14 }}>$</Text>
+                <View style={{ width: '48%', backgroundColor: '#112240', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginBottom: 10 }}>MAX RATE</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 16, width: '100%' }}>
+                    <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}>$</Text>
                     <TextInput 
-                      style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 14, flex: 1, paddingVertical: 8, textAlign: 'right' }}
+                      style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 18, flex: 1, paddingVertical: 12, textAlign: 'right' }}
                       keyboardType="numeric"
                       value={String(mSellRange.max)}
                       onChangeText={(val) => setMSellRange({...mSellRange, max: parseFloat(val) || 0})}
