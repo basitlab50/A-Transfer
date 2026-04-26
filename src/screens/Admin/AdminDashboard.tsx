@@ -45,22 +45,29 @@ const AdminDashboard = ({ navigation }: any) => {
   const [creditAmount, setCreditAmount] = useState('');
   const [creditType, setCreditType] = useState<'balance' | 'inventory'>('balance');
   
-  const [rates, setRates] = useState(systemSettings.exchangeRates);
-  const [mBuyRate, setMBuyRate] = useState(systemSettings.merchantBuyRate || 0);
-  const [mSellRange, setMSellRange] = useState(systemSettings.merchantSellRange || { min: 0, max: 0 });
+  const [rates, setRates] = useState(systemSettings?.exchangeRates || {});
+  const [mBuyRate, setMBuyRate] = useState(systemSettings?.merchantBuyRate || 0);
+  const [mSellRange, setMSellRange] = useState(systemSettings?.merchantSellRange || { min: 0, max: 0 });
 
   useEffect(() => {
     loadUsers();
-    setRates(systemSettings.exchangeRates);
-    setMBuyRate(systemSettings.merchantBuyRate);
-    setMSellRange(systemSettings.merchantSellRange);
+    if (systemSettings) {
+      setRates(systemSettings.exchangeRates || {});
+      setMBuyRate(systemSettings.merchantBuyRate || 0);
+      setMSellRange(systemSettings.merchantSellRange || { min: 0, max: 0 });
+    }
   }, [systemSettings]);
 
   const loadUsers = async () => {
-    setLoading(true);
-    const data = await fetchAllUsers();
-    setUsers(data);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const data = await fetchAllUsers();
+      setUsers(data || []);
+    } catch (e) {
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAllocate = async () => {
@@ -147,28 +154,27 @@ const AdminDashboard = ({ navigation }: any) => {
         </TouchableOpacity>
         
         {isModeMenuOpen && (
-          <Animated.View 
-            entering={FadeInUp}
-            className="absolute top-[100%] left-6 bg-surface p-4 rounded-3xl border border-slate-800 z-50 shadow-2xl w-48"
+          <View 
+            style={{ position: 'absolute', top: '100%', left: 24, backgroundColor: '#112240', padding: 15, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B', zIndex: 50, width: 192, elevation: 20 }}
           >
             <TouchableOpacity 
               onPress={() => {
                 setIsModeMenuOpen(false);
                 toggleAdminMode();
               }}
-              className="flex-row items-center p-3 rounded-xl hover:bg-primary"
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12 }}
             >
               <User color="#94A3B8" size={16} />
-              <Text className="text-textSecondary font-bold ml-3">User Mode</Text>
+              <Text style={{ color: '#94A3B8', fontWeight: 'bold', marginLeft: 12 }}>User Mode</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={() => setIsModeMenuOpen(false)}
-              className="flex-row items-center p-3 mt-2 rounded-xl bg-accent/10"
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 12, marginTop: 8, borderRadius: 12, backgroundColor: 'rgba(118, 179, 58, 0.1)' }}
             >
               <ShieldCheck color="#76b33a" size={16} />
-              <Text className="text-accent font-bold ml-3">Admin Mode</Text>
+              <Text style={{ color: '#76b33a', fontWeight: 'bold', marginLeft: 12 }}>Admin Mode</Text>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
         )}
 
           <TouchableOpacity onPress={() => setIsSettingsOpen(true)} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
@@ -230,7 +236,7 @@ const AdminDashboard = ({ navigation }: any) => {
         </View>
 
         {activeView === 'circulation' ? (
-          <Animated.View entering={FadeIn} className="bg-surface p-8 rounded-[40px] border border-slate-800 mb-8">
+          <View style={{ backgroundColor: '#112240', padding: 30, borderRadius: 40, borderWidth: 1, borderColor: '#1E293B', marginBottom: 30 }}>
             <Text className="text-textPrimary text-2xl font-bold mb-6">Financial Report</Text>
             <View className="space-y-4">
               <View className="flex-row justify-between items-center bg-primary/50 p-5 rounded-2xl">
@@ -256,7 +262,7 @@ const AdminDashboard = ({ navigation }: any) => {
                 <ShieldCheck color="#76b33a" size={32} />
               </View>
             </View>
-          </Animated.View>
+          </View>
         ) : (
           <>
             <View className="flex-row items-center bg-surface px-4 py-3 rounded-2xl border border-slate-800 mb-6">
@@ -272,14 +278,14 @@ const AdminDashboard = ({ navigation }: any) => {
             <Text className="text-textSecondary text-xs font-bold uppercase tracking-widest mb-4">
               {activeView === 'merchants' ? 'Approved Merchants' : 'Global User Directory'}
             </Text>
-            {filteredUsers.map((user, index) => (
-              <Animated.View key={user.id} entering={FadeInUp.delay(index * 50)}>
+            {filteredUsers.map((user) => (
+              <View key={user.id}>
                 <TouchableOpacity 
                   onPress={() => {
                     setSelectedUser(user);
                     setIsModalOpen(true);
                   }}
-                  className="bg-surface/40 p-5 rounded-[28px] border border-slate-800/50 mb-4 flex-row items-center"
+                  style={{ backgroundColor: 'rgba(17, 34, 64, 0.4)', padding: 20, borderRadius: 28, borderWidth: 1, borderColor: 'rgba(30, 41, 59, 0.5)', marginBottom: 15, flexDirection: 'row', alignItems: 'center' }}
                 >
                   <View className="w-12 h-12 rounded-2xl bg-slate-800 items-center justify-center mr-4">
                     <Text className="text-textPrimary font-bold">{user.name?.charAt(0) || 'U'}</Text>
@@ -306,7 +312,7 @@ const AdminDashboard = ({ navigation }: any) => {
                     <Text className="text-textSecondary text-[8px] mt-1 italic">Inv: A {user.merchantInventory?.toLocaleString() || 0}</Text>
                   </View>
                 </TouchableOpacity>
-              </Animated.View>
+              </View>
             ))}
           </>
         )}

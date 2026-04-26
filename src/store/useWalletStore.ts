@@ -82,6 +82,8 @@ interface WalletState {
   pendingRequests: any[];
   systemSettings: {
     exchangeRates: { [key: string]: number };
+    merchantBuyRate: number;
+    merchantSellRange: { min: number; max: number };
     maintenanceMode: boolean;
   };
   notifications: AppNotification[];
