@@ -46,16 +46,25 @@ const AdminDashboard = ({ navigation }: any) => {
   const [creditAmount, setCreditAmount] = useState('');
   const [creditType, setCreditType] = useState<'balance' | 'inventory'>('balance');
   
-  const [rates, setRates] = useState(systemSettings?.exchangeRates || {});
-  const [mBuyRate, setMBuyRate] = useState(systemSettings?.merchantBuyRate || 0);
-  const [mSellRange, setMSellRange] = useState(systemSettings?.merchantSellRange || { min: 0, max: 0 });
+  const [rates, setRates] = useState<{[key: string]: string}>(
+    Object.keys(systemSettings?.exchangeRates || {}).reduce((acc, key) => ({
+      ...acc, [key]: systemSettings.exchangeRates[key]?.toString() || '0'
+    }), {})
+  );
+  const [mBuyRate, setMBuyRate] = useState(systemSettings?.merchantBuyRate?.toString() || '0');
+  const [mMinRate, setMMinRate] = useState(systemSettings?.merchantSellRange?.min?.toString() || '0');
+  const [mMaxRate, setMMaxRate] = useState(systemSettings?.merchantSellRange?.max?.toString() || '0');
 
   useEffect(() => {
     loadUsers();
     if (systemSettings) {
-      setRates(systemSettings.exchangeRates || {});
-      setMBuyRate(systemSettings.merchantBuyRate || 0);
-      setMSellRange(systemSettings.merchantSellRange || { min: 0, max: 0 });
+      const stringRates = Object.keys(systemSettings.exchangeRates || {}).reduce((acc, key) => ({
+        ...acc, [key]: systemSettings.exchangeRates[key]?.toString() || '0'
+      }), {});
+      setRates(stringRates);
+      setMBuyRate(systemSettings.merchantBuyRate?.toString() || '0');
+      setMMinRate(systemSettings.merchantSellRange?.min?.toString() || '0');
+      setMMaxRate(systemSettings.merchantSellRange?.max?.toString() || '0');
     }
   }, [systemSettings]);
 
@@ -100,10 +109,17 @@ const AdminDashboard = ({ navigation }: any) => {
 
   const handleUpdateRates = async () => {
     try {
+      const numericRates = Object.keys(rates).reduce((acc, key) => ({
+        ...acc, [key]: parseFloat(rates[key]) || 0
+      }), {});
+
       await updateGlobalSettings({ 
-        exchangeRates: rates,
-        merchantBuyRate: mBuyRate,
-        merchantSellRange: mSellRange
+        exchangeRates: numericRates,
+        merchantBuyRate: parseFloat(mBuyRate) || 0,
+        merchantSellRange: {
+          min: parseFloat(mMinRate) || 0,
+          max: parseFloat(mMaxRate) || 0
+        }
       });
       Alert.alert('Success', 'Global settings updated!');
       setIsSettingsOpen(false);
@@ -459,10 +475,10 @@ const AdminDashboard = ({ navigation }: any) => {
                     <Text style={{ color: '#F8FAFC', fontWeight: 'bold', fontSize: 14 }}>{country}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 12, width: 100 }}>
                       <TextInput 
-                        style={{ paddingVertical: 6, color: '#94A3B8', fontWeight: 'bold', textAlign: 'right', fontSize: 13 }}
-                        keyboardType="numeric"
-                        value={String(rates[country])}
-                        onChangeText={(val) => setRates({...rates, [country]: parseFloat(val) || 0})}
+                        style={{ paddingVertical: 6, color: '#94A3B8', fontWeight: 'bold', textAlign: 'right', fontSize: 13, flex: 1 }}
+                        keyboardType="decimal-pad"
+                        value={rates[country]}
+                        onChangeText={(val) => setRates({...rates, [country]: val})}
                       />
                     </View>
                   </View>
@@ -470,7 +486,7 @@ const AdminDashboard = ({ navigation }: any) => {
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 10 }}>
                     <Text style={{ color: '#64748B', fontSize: 10 }}>Merchant Pays (Local):</Text>
                     <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}>
-                      {((rates[country] || 0) * (mBuyRate || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {((parseFloat(rates[country]) || 0) * (parseFloat(mBuyRate) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </Text>
                   </View>
                 </View>
@@ -485,9 +501,9 @@ const AdminDashboard = ({ navigation }: any) => {
                   <Text style={{ color: '#eab308', fontWeight: 'bold', fontSize: 18 }}>$</Text>
                   <TextInput 
                     style={{ flex: 1, paddingVertical: 15, color: '#eab308', fontWeight: 'bold', textAlign: 'right', fontSize: 20 }}
-                    keyboardType="numeric"
-                    value={String(mBuyRate)}
-                    onChangeText={(val) => setMBuyRate(parseFloat(val) || 0)}
+                    keyboardType="decimal-pad"
+                    value={mBuyRate}
+                    onChangeText={setMBuyRate}
                   />
                 </View>
                 <Text style={{ color: '#475569', fontSize: 10, marginTop: 10, italic: true }}>* This is the price merchants pay the platform per A-Credit.</Text>
@@ -501,9 +517,9 @@ const AdminDashboard = ({ navigation }: any) => {
                     <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16 }}>$</Text>
                     <TextInput 
                       style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 18, flex: 1, paddingVertical: 12, textAlign: 'right' }}
-                      keyboardType="numeric"
-                      value={String(mSellRange.min)}
-                      onChangeText={(val) => setMSellRange({...mSellRange, min: parseFloat(val) || 0})}
+                      keyboardType="decimal-pad"
+                      value={mMinRate}
+                      onChangeText={setMMinRate}
                     />
                   </View>
                 </View>
@@ -513,9 +529,9 @@ const AdminDashboard = ({ navigation }: any) => {
                     <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}>$</Text>
                     <TextInput 
                       style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 18, flex: 1, paddingVertical: 12, textAlign: 'right' }}
-                      keyboardType="numeric"
-                      value={String(mSellRange.max)}
-                      onChangeText={(val) => setMSellRange({...mSellRange, max: parseFloat(val) || 0})}
+                      keyboardType="decimal-pad"
+                      value={mMaxRate}
+                      onChangeText={setMMaxRate}
                     />
                   </View>
                 </View>
