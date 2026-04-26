@@ -8,7 +8,8 @@ import {
   CreditCard,
   ChevronRight,
   ShieldCheck,
-  Home
+  Home,
+  FileText
 } from 'lucide-react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 
@@ -19,7 +20,7 @@ import { useWalletStore } from '../../store/useWalletStore';
  */
 const AdminDetailList = ({ route, navigation }: any) => {
   const { type } = route.params;
-  const { fetchAllUsers } = useWalletStore();
+  const { fetchAllUsers, fetchAllTransactions } = useWalletStore();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -34,11 +35,18 @@ const AdminDetailList = ({ route, navigation }: any) => {
       const users = await fetchAllUsers();
       
       if (type === 'users') {
-        setData(users);
+        setData(users.map(u => ({ ...u, _itemType: 'user' })));
       } else if (type === 'merchants') {
-        setData(users.filter((u: any) => u.merchantStatus === 'approved'));
+        setData(users.filter((u: any) => u.merchantStatus === 'approved').map(u => ({ ...u, _itemType: 'user' })));
       } else if (type === 'circulation') {
-        setData([...users].sort((a: any, b: any) => (b.balance || 0) - (a.balance || 0)));
+        const transactions = await fetchAllTransactions();
+        // Combine and mark types
+        const combined = [
+          ...users.map(u => ({ ...u, _itemType: 'user' })),
+          ...transactions.map(t => ({ ...t, _itemType: 'transaction' }))
+        ];
+        // Sort users by balance by default, transactions will be searched
+        setData(combined.sort((a: any, b: any) => (b.balance || 0) - (a.balance || 0)));
       }
     } catch (err) {
       console.error('Data Load Error:', err);
@@ -47,23 +55,27 @@ const AdminDetailList = ({ route, navigation }: any) => {
     }
   };
 
-  const filteredData = data.filter(item => 
-    (item.name || '').toLowerCase().includes(search.toLowerCase()) || 
-    (item.email || '').toLowerCase().includes(search.toLowerCase()) ||
-    (item.aid || '').includes(search)
-  );
+  const filteredData = data.filter(item => {
+    const s = search.toLowerCase();
+    if (item._itemType === 'user') {
+      return (item.name || '').toLowerCase().includes(s) || 
+             (item.email || '').toLowerCase().includes(s) ||
+             (item.aid || '').includes(search);
+    } else {
+      // Transaction search: ID, Name, Status, Type
+      return (item.id || '').toLowerCase().includes(s) ||
+             (item.userName || '').toLowerCase().includes(s) ||
+             (item.status || '').toLowerCase().includes(s) ||
+             (item.type || '').toLowerCase().includes(s) ||
+             (item.userPhone || '').includes(search);
+    }
+  });
 
   const renderHeader = () => {
     const titles: any = {
       users: 'User Directory',
       merchants: 'Merchant Network',
       circulation: 'Asset Circulation'
-    };
-
-    const icons: any = {
-      users: <Users color="#76b33a" size={24} />,
-      merchants: <ShoppingBag color="#76b33a" size={24} />,
-      circulation: <CreditCard color="#eab308" size={24} />
     };
 
     return (
@@ -86,7 +98,7 @@ const AdminDetailList = ({ route, navigation }: any) => {
           <Search color="#94A3B8" size={20} />
           <TextInput 
             style={styles.searchInput}
-            placeholder={`Search ${type}...`}
+            placeholder={type === 'circulation' ? "Search ID, Name, Email or AID..." : `Search ${type}...`}
             placeholderTextColor="#475569"
             value={search}
             onChangeText={setSearch}
@@ -96,33 +108,67 @@ const AdminDetailList = ({ route, navigation }: any) => {
     );
   };
 
-  const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
-      onPress={() => navigation.navigate('AdminUserDetails', { userId: item.id })}
-      style={styles.listItem}
-    >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{item.name?.charAt(0) || 'U'}</Text>
-      </View>
-      
-      <View style={{ flex: 1 }}>
-        <Text style={styles.userName} numberOfLines={1}>{item.name || 'Unnamed'}</Text>
-        <Text style={styles.userAid}>{item.aid || '---'}</Text>
-      </View>
+  const renderItem = ({ item }: { item: any }) => {
+    if (item._itemType === 'transaction') {
+      return (
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('Receipt', { transaction: item })}
+          style={styles.listItem}
+        >
+          <View style={[styles.avatar, { backgroundColor: '#eab30822' }]}>
+            <FileText color="#eab308" size={18} />
+          </View>
+          
+          <View style={{ flex: 1 }}>
+            <Text style={styles.userName} numberOfLines={1}>{item.id}</Text>
+            <Text style={styles.userAid}>{item.userName || 'System Transaction'}</Text>
+          </View>
 
-      <View style={styles.statBox}>
-        <Text style={styles.statVal}>A {item.balance?.toLocaleString() || 0}</Text>
-        <Text style={styles.statLabel}>Wallet</Text>
-      </View>
+          <View style={styles.statBox}>
+            <Text style={[styles.statVal, { color: '#eab308' }]}>A {item.amount?.toLocaleString() || 0}</Text>
+            <Text style={styles.statLabel}>{item.type || 'Transfer'}</Text>
+          </View>
 
-      <View style={[styles.statBox, { marginLeft: 10 }]}>
-        <Text style={[styles.statVal, { color: '#76b33a' }]}>A {item.merchantInventory?.toLocaleString() || 0}</Text>
-        <Text style={styles.statLabel}>Inv</Text>
-      </View>
+          <View style={[styles.statBox, { marginLeft: 10, width: 80 }]}>
+            <Text style={[styles.statVal, { fontSize: 10, color: item.status === 'completed' ? '#76b33a' : '#94A3B8' }]}>
+              {item.status?.toUpperCase() || 'PENDING'}
+            </Text>
+            <Text style={styles.statLabel}>Status</Text>
+          </View>
 
-      <ChevronRight color="#475569" size={16} style={{ marginLeft: 10 }} />
-    </TouchableOpacity>
-  );
+          <ChevronRight color="#475569" size={16} style={{ marginLeft: 10 }} />
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('AdminUserDetails', { userId: item.id })}
+        style={styles.listItem}
+      >
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{item.name?.charAt(0) || 'U'}</Text>
+        </View>
+        
+        <View style={{ flex: 1 }}>
+          <Text style={styles.userName} numberOfLines={1}>{item.name || 'Unnamed'}</Text>
+          <Text style={styles.userAid}>{item.aid || '---'}</Text>
+        </View>
+
+        <View style={styles.statBox}>
+          <Text style={styles.statVal}>A {item.balance?.toLocaleString() || 0}</Text>
+          <Text style={styles.statLabel}>Wallet</Text>
+        </View>
+
+        <View style={[styles.statBox, { marginLeft: 10 }]}>
+          <Text style={[styles.statVal, { color: '#76b33a' }]}>A {item.merchantInventory?.toLocaleString() || 0}</Text>
+          <Text style={styles.statLabel}>Inv</Text>
+        </View>
+
+        <ChevronRight color="#475569" size={16} style={{ marginLeft: 10 }} />
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (

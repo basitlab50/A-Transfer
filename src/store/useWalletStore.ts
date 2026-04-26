@@ -108,6 +108,7 @@ interface WalletState {
   fetchUserTransactions: (uid: string) => Promise<any[]>;
   markNotificationAsRead: (id: string) => Promise<void>;
   resetMerchantStatus: () => Promise<void>;
+  fetchAllTransactions: () => Promise<any[]>;
 }
 
 const MOCK_TRANSACTIONS: Transaction[] = [
@@ -131,7 +132,7 @@ const MOCK_MERCHANTS: Merchant[] = [
   { id: '5', name: 'Kumasi Trader', rating: 4.6, location: 'Kumasi', country: 'Ghana', creditsAvailable: 'A 2,100', methods: ['Mobile Money'] },
 ];
 
-export const useWalletStore = create<WalletState>((set) => ({
+export const useWalletStore = create<WalletState>((set, get) => ({
   balance: 0,
   merchantInventory: 0,
   merchantEarnings: 0,
@@ -141,8 +142,6 @@ export const useWalletStore = create<WalletState>((set) => ({
   merchants: MOCK_MERCHANTS,
   isMerchantMode: false,
   isOnline: true,
-  merchantInventory: 5000,
-  merchantEarnings: 450.25,
   isKYCVerified: false,
   isAuthenticated: false,
   isAdmin: false,
@@ -179,6 +178,8 @@ export const useWalletStore = create<WalletState>((set) => ({
       }
     }
   },
+  depositFromMerchant: () => {},
+  withdrawToMerchant: () => {},
   setUserCountry: (countryName) => set({ userCountry: countryName }),
   toggleMerchantMode: () => set((state) => ({ isMerchantMode: !state.isMerchantMode })),
   toggleAdminMode: () => set((state) => ({ isAdminMode: !state.isAdminMode })),
@@ -253,8 +254,17 @@ export const useWalletStore = create<WalletState>((set) => ({
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error: any) {
-      console.error('Error fetching users (Possible Security Rules issue):', error.message);
-      // If permission denied, return empty but log why
+      console.error('Error fetching users:', error.message);
+      return [];
+    }
+  },
+  fetchAllTransactions: async () => {
+    try {
+      const q = query(collection(db, 'ongoing_transactions'));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error: any) {
+      console.error('Error fetching all transactions:', error.message);
       return [];
     }
   },
