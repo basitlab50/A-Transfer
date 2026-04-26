@@ -74,7 +74,7 @@ const Dashboard = ({ navigation }: Props) => {
             </TouchableOpacity>
             <Text className="text-textSecondary text-xs font-medium">Hello,</Text>
             <Text className="text-textPrimary text-xl font-bold tracking-tight">{userProfile?.name || 'User'}</Text>
-            <Text className="text-textSecondary text-[8px] font-mono opacity-50">My UID: {auth.currentUser?.uid}</Text>
+            <Text className="text-textSecondary text-[8px] font-mono opacity-50">My AID: {userProfile?.aid || '...'}</Text>
             {isAdmin && (
               <View className="bg-accent/20 px-2 py-0.5 rounded-md mt-1 self-start">
                 <Text className="text-accent text-[8px] font-bold uppercase">Super Admin</Text>
