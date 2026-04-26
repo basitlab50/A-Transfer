@@ -143,45 +143,57 @@ const AdminDashboard = ({ navigation }: any) => {
 
   return (
     <SafeAreaView className="flex-1 bg-primary">
-      {/* Header */}
-      <View style={{ paddingTop: insets.top + 10 }} className="px-6 pb-4 flex-row items-center justify-between">
-        <TouchableOpacity 
-          onPress={() => setIsModeMenuOpen(!isModeMenuOpen)} 
-          className="flex-row items-center bg-yellow-500/10 px-4 py-2 rounded-2xl border border-yellow-500/20"
-        >
-          <ShieldCheck color="#eab308" size={16} />
-          <Text className="text-yellow-500 font-bold ml-2 mr-1">Super Admin</Text>
-          <ChevronDown color="#eab308" size={14} />
-        </TouchableOpacity>
-        
+      {/* Header Container */}
+      <View className="px-6 pb-4">
+        <View style={{ paddingTop: insets.top + 10 }} className="flex-row items-center justify-between mb-4">
+          <TouchableOpacity 
+            onPress={() => setIsModeMenuOpen(!isModeMenuOpen)} 
+            className="flex-row items-center bg-yellow-500/10 px-4 py-2 rounded-2xl border border-yellow-500/20"
+          >
+            <ShieldCheck color="#eab308" size={16} />
+            <Text className="text-yellow-500 font-bold ml-2 mr-1">Super Admin</Text>
+            <ChevronDown color="#eab308" size={14} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity onPress={() => setIsSettingsOpen(true)} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
+            <Settings color="#eab308" size={20} />
+          </TouchableOpacity>
+        </View>
+
         {isModeMenuOpen && (
           <View 
-            style={{ position: 'absolute', top: '100%', left: 24, backgroundColor: '#112240', padding: 15, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B', zIndex: 50, width: 192, elevation: 20 }}
+            style={{ backgroundColor: '#112240', padding: 10, borderRadius: 28, borderWidth: 1, borderColor: '#1E293B', marginBottom: 20 }}
           >
             <TouchableOpacity 
               onPress={() => {
                 setIsModeMenuOpen(false);
                 toggleAdminMode();
               }}
-              style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12 }}
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 20, backgroundColor: '#0A192F', marginBottom: 8 }}
             >
-              <User color="#94A3B8" size={16} />
-              <Text style={{ color: '#94A3B8', fontWeight: 'bold', marginLeft: 12 }}>User Mode</Text>
+              <View className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center mr-4">
+                <User color="#94A3B8" size={20} />
+              </View>
+              <View>
+                <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>Switch to User Mode</Text>
+                <Text style={{ color: '#94A3B8', fontSize: 10 }}>Return to your personal wallet</Text>
+              </View>
             </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => setIsModeMenuOpen(false)}
-              style={{ flexDirection: 'row', alignItems: 'center', padding: 12, marginTop: 8, borderRadius: 12, backgroundColor: 'rgba(118, 179, 58, 0.1)' }}
+            
+            <View 
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 20, backgroundColor: 'rgba(118, 179, 58, 0.1)', borderWidth: 1, borderColor: 'rgba(118, 179, 58, 0.2)' }}
             >
-              <ShieldCheck color="#76b33a" size={16} />
-              <Text style={{ color: '#76b33a', fontWeight: 'bold', marginLeft: 12 }}>Admin Mode</Text>
-            </TouchableOpacity>
+              <View className="w-10 h-10 rounded-full bg-accent/20 items-center justify-center mr-4">
+                <ShieldCheck color="#76b33a" size={20} />
+              </View>
+              <View>
+                <Text style={{ color: '#76b33a', fontWeight: 'bold' }}>Admin Mode Active</Text>
+                <Text style={{ color: 'rgba(118, 179, 58, 0.7)', fontSize: 10 }}>You have full system access</Text>
+              </View>
+            </View>
           </View>
         )}
-
-          <TouchableOpacity onPress={() => setIsSettingsOpen(true)} className="w-10 h-10 rounded-full bg-surface items-center justify-center">
-            <Settings color="#eab308" size={20} />
-          </TouchableOpacity>
-        </View>
+      </View>
 
         {/* Pending Actions Section */}
         <View className="mb-6">
