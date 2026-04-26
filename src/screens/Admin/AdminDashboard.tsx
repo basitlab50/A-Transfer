@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Alert, ActivityIndicator, Dimensions, useWindowDimensions } from 'react-native';
 import { 
   ShieldCheck, 
   Users, 
@@ -33,6 +33,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AdminDashboard = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const { fetchAllUsers, updateUserStatus, allocateCredits, systemSettings, updateGlobalSettings, toggleAdminMode } = useWalletStore();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -420,36 +421,39 @@ const AdminDashboard = ({ navigation }: any) => {
 
       {/* Global Settings Modal */}
       <Modal visible={isSettingsOpen} animationType="slide" transparent>
-        <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 20 }}>
-          <View style={{ backgroundColor: '#0A192F', borderRadius: 40, padding: 30, borderWidth: 1, borderColor: '#1E293B' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 30 }}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.8)' }}>
+          <View style={{ backgroundColor: '#0A192F', borderTopLeftRadius: 40, borderTopRightRadius: 40, padding: 25, paddingBottom: insets.bottom + 20, borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#1E293B', maxHeight: screenHeight * 0.9 }}>
+            <View style={{ width: 40, height: 4, backgroundColor: '#1E293B', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 25 }}>
               <Globe color="#eab308" size={24} />
-              <Text style={{ color: '#F8FAFC', fontSize: 24, fontWeight: 'bold', marginLeft: 15 }}>System Controls</Text>
+              <Text style={{ color: '#F8FAFC', fontSize: 22, fontWeight: 'bold', marginLeft: 15 }}>System Controls</Text>
             </View>
             
-            <ScrollView style={{ maxHeight: 400 }}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
               <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 15, letterSpacing: 1 }}>User Exchange Rates (1 A = ...)</Text>
               {rates && Object.keys(rates).map(country => (
-                <View key={country} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
-                  <Text style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1 }}>{country}</Text>
-                  <TextInput 
-                    style={{ backgroundColor: '#0A192F', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12, color: '#76b33a', fontWeight: 'bold', width: 120, textAlign: 'right' }}
-                    keyboardType="numeric"
-                    value={String(rates[country])}
-                    onChangeText={(val) => setRates({...rates, [country]: parseFloat(val) || 0})}
-                  />
+                <View key={country} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
+                  <Text style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1, fontSize: 14 }}>{country}</Text>
+                  <View style={{ backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 12, width: 110 }}>
+                    <TextInput 
+                      style={{ paddingVertical: 8, color: '#76b33a', fontWeight: 'bold', textAlign: 'right', fontSize: 14 }}
+                      keyboardType="numeric"
+                      value={String(rates[country])}
+                      onChangeText={(val) => setRates({...rates, [country]: parseFloat(val) || 0})}
+                    />
+                  </View>
                 </View>
               ))}
 
               <View style={{ height: 1, backgroundColor: '#1E293B', marginVertical: 20 }} />
 
               <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 15, letterSpacing: 1 }}>Merchant Purchase Price</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
-                <Text style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1 }}>Buy A-Credit Rate</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 12, width: 120 }}>
-                  <Text style={{ color: '#eab308', fontWeight: 'bold' }}>$</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
+                <Text style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1, fontSize: 14 }}>Buy A-Credit Rate</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 12, width: 110 }}>
+                  <Text style={{ color: '#eab308', fontWeight: 'bold', fontSize: 14 }}>$</Text>
                   <TextInput 
-                    style={{ flex: 1, paddingVertical: 8, color: '#eab308', fontWeight: 'bold', textAlign: 'right' }}
+                    style={{ flex: 1, paddingVertical: 8, color: '#eab308', fontWeight: 'bold', textAlign: 'right', fontSize: 14 }}
                     keyboardType="numeric"
                     value={String(mBuyRate)}
                     onChangeText={(val) => setMBuyRate(parseFloat(val) || 0)}
@@ -460,11 +464,11 @@ const AdminDashboard = ({ navigation }: any) => {
               <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 15, letterSpacing: 1 }}>Global Merchant Sell Range</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <View style={{ width: '48%', backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
-                  <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 5 }}>MIN RATE</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16 }}>$</Text>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 8 }}>MIN RATE</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 10, borderRadius: 12 }}>
+                    <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 14 }}>$</Text>
                     <TextInput 
-                      style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16, flex: 1, marginLeft: 2 }}
+                      style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 14, flex: 1, paddingVertical: 8, textAlign: 'right' }}
                       keyboardType="numeric"
                       value={String(mSellRange.min)}
                       onChangeText={(val) => setMSellRange({...mSellRange, min: parseFloat(val) || 0})}
@@ -472,11 +476,11 @@ const AdminDashboard = ({ navigation }: any) => {
                   </View>
                 </View>
                 <View style={{ width: '48%', backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
-                  <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 5 }}>MAX RATE</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}>$</Text>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 8 }}>MAX RATE</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 10, borderRadius: 12 }}>
+                    <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 14 }}>$</Text>
                     <TextInput 
-                      style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16, flex: 1, marginLeft: 2 }}
+                      style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 14, flex: 1, paddingVertical: 8, textAlign: 'right' }}
                       keyboardType="numeric"
                       value={String(mSellRange.max)}
                       onChangeText={(val) => setMSellRange({...mSellRange, max: parseFloat(val) || 0})}
