@@ -163,7 +163,9 @@ const ReceiptScreen = ({ route, navigation }: any) => {
             </View>
             <View className="flex-row justify-between mt-2">
               <Text className="text-accent text-xs font-bold uppercase tracking-tighter">Amount Paid to Recipient</Text>
-              <Text className="text-accent text-lg font-bold">{transaction.recipientCurrency || transaction.currencyCode || ''} {transaction.finalAmount?.toLocaleString() || transaction.localAmount?.toLocaleString() || 'N/A'}</Text>
+              <Text className="text-accent text-lg font-bold">
+                {transaction.recipientCurrency || transaction.currencyCode || 'A'} {(transaction.finalAmount || transaction.localAmount || transaction.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </Text>
             </View>
           </View>
         </AppCard>

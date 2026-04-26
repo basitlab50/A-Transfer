@@ -52,6 +52,7 @@ const DepositAmount = ({ route, navigation }: any) => {
         merchantId: merchant.id,
         amount: Number(creditsToBuy),
         localAmount: localCost,
+        finalAmount: Number(creditsToBuy),
         currencyCode: currencyCode,
         status: 'awaiting_confirmation',
         timestamp: new Date().toISOString(),
