@@ -25,17 +25,20 @@ const DepositAmount = ({ route, navigation }: any) => {
     [availableCountries, merchant]
   );
 
-  const rate = country?.rate || 1;
+  const merchantRate = merchant?.sellingRate || 1.5;
+  const countryBaseRate = country?.rate || 1;
+  const effectiveRate = merchantRate * countryBaseRate;
+
   const currencySymbol = country?.currencySymbol || '$';
   const currencyCode = country?.currencyCode || 'USD';
 
   const creditsToBuy = isLocalCurrencyMode 
-    ? (parseFloat(inputValue) || 0) / rate 
+    ? (parseFloat(inputValue) || 0) / effectiveRate 
     : (parseFloat(inputValue) || 0);
 
   const localCost = isLocalCurrencyMode
     ? (parseFloat(inputValue) || 0)
-    : (parseFloat(inputValue) || 0) * rate;
+    : (parseFloat(inputValue) || 0) * effectiveRate;
 
   const handleIHavePaid = async () => {
     if (loading) return;
@@ -130,6 +133,12 @@ const DepositAmount = ({ route, navigation }: any) => {
                 <Text style={{ color: '#94A3B8', fontSize: 14, marginRight: 8 }}>Total Cost:</Text>
                 <Text style={{ color: '#F8FAFC', fontSize: 18, fontWeight: 'bold' }}>
                   {isLocalCurrencyMode ? `A ${creditsToBuy.toFixed(2)}` : `${currencySymbol}${localCost.toLocaleString()} ${currencyCode}`}
+                </Text>
+              </View>
+
+              <View style={{ marginTop: 15, paddingHorizontal: 15, paddingVertical: 8, backgroundColor: 'rgba(118, 179, 58, 0.05)', borderRadius: 12, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(118, 179, 58, 0.2)' }}>
+                <Text style={{ color: '#94A3B8', fontSize: 9, textAlign: 'center' }}>
+                  Rate: 1 A = ${merchantRate.toFixed(2)} • 1 USD = {countryBaseRate} {currencyCode}
                 </Text>
               </View>
             </View>

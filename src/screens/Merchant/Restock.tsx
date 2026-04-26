@@ -11,7 +11,7 @@ const Restock = ({ navigation }: any) => {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   
-  const { userCountry, availableCountries, increaseInventory, userProfile } = useWalletStore();
+  const { userCountry, availableCountries, increaseInventory, userProfile, systemSettings } = useWalletStore();
   const currentCountry = availableCountries.find(c => c.name === userCountry);
   const rate = currentCountry?.rate || 1;
   const currencySymbol = currentCountry?.currencySymbol || '$';
@@ -40,7 +40,8 @@ const Restock = ({ navigation }: any) => {
     setShowPaystack(false);
   };
 
-  const localCost = (parseFloat(amount) || 0) * rate;
+  const mBuyRate = systemSettings?.merchantBuyRate || 1.0;
+  const localCost = (parseFloat(amount) || 0) * mBuyRate * rate;
 
   if (isSuccess) {
     return (
@@ -95,11 +96,14 @@ const Restock = ({ navigation }: any) => {
                 autoFocus
               />
             </View>
-            <View className="flex-row items-center border-t border-card-border/20 pt-4">
-              <CornerDownRight color="#64748B" size={16} />
-              <Text className="text-textSecondary text-sm ml-2">
-                Cost: <Text className="text-textPrimary font-bold">{currencySymbol}{localCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>
-              </Text>
+            <View className="items-center border-t border-card-border/20 pt-4">
+              <View className="flex-row items-center mb-1">
+                <CornerDownRight color="#64748B" size={16} />
+                <Text className="text-textSecondary text-sm ml-2">
+                  Total: <Text className="text-textPrimary font-bold">{currencySymbol}{localCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>
+                </Text>
+              </View>
+              <Text className="text-[9px] text-textSecondary italic">Platform Rate: 1 A = ${mBuyRate.toFixed(2)}</Text>
             </View>
           </View>
 

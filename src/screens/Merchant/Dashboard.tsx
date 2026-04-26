@@ -22,6 +22,7 @@ import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useWalletStore } from '../../store/useWalletStore';
 import { AppCard } from '../../components/ui/AppCard';
 import { AppButton } from '../../components/ui/AppButton';
+import { TextInput, Alert } from 'react-native';
 
 const MerchantDashboard = ({ navigation }: any) => {
   const { 
@@ -31,9 +32,14 @@ const MerchantDashboard = ({ navigation }: any) => {
     toggleOnlineStatus, 
     toggleMerchantMode,
     userCountry,
-    availableCountries
+    availableCountries,
+    systemSettings,
+    userProfile,
+    updateMerchantRate
   } = useWalletStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mRate, setMRate] = useState(userProfile?.sellingRate?.toString() || '1.5');
+  const [isUpdatingRate, setIsUpdatingRate] = useState(false);
 
   const currentCountry = availableCountries.find(c => c.name === userCountry);
   const rate = currentCountry?.rate || 1;
@@ -150,6 +156,55 @@ const MerchantDashboard = ({ navigation }: any) => {
             trackColor={{ false: '#1E293B', true: '#76b33a' }}
             thumbColor="#FFFFFF"
           />
+        </AppCard>
+
+        {/* Market Pricing Card */}
+        <AppCard className="mb-6 border-slate-800/50">
+          <View className="flex-row justify-between items-center mb-4">
+            <View>
+              <Text className="text-textPrimary font-bold">Market Rate</Text>
+              <Text className="text-textSecondary text-xs">Your selling price to users</Text>
+            </View>
+            <View className="bg-accent/10 px-3 py-1 rounded-full">
+              <Text className="text-accent text-[10px] font-bold">RANGE: ${systemSettings.merchantSellRange.min} - ${systemSettings.merchantSellRange.max}</Text>
+            </View>
+          </View>
+          
+          <View className="flex-row items-center space-x-3">
+            <View className="flex-1 flex-row items-center bg-primary border border-slate-800 rounded-2xl px-4 py-1">
+              <Text className="text-textPrimary font-bold text-lg mr-2">$</Text>
+              <TextInput 
+                value={mRate}
+                onChangeText={setMRate}
+                keyboardType="numeric"
+                className="flex-1 text-textPrimary font-bold text-lg h-12"
+                placeholder="0.00"
+                placeholderTextColor="#475569"
+              />
+            </View>
+            <TouchableOpacity 
+              onPress={async () => {
+                const rate = parseFloat(mRate);
+                if (isNaN(rate) || rate < systemSettings.merchantSellRange.min || rate > systemSettings.merchantSellRange.max) {
+                  Alert.alert('Invalid Rate', `Please set a rate between $${systemSettings.merchantSellRange.min} and $${systemSettings.merchantSellRange.max}`);
+                  return;
+                }
+                setIsUpdatingRate(true);
+                try {
+                  await updateMerchantRate(rate);
+                  Alert.alert('Success', 'Market rate updated!');
+                } catch (e) {
+                  Alert.alert('Error', 'Failed to update rate');
+                } finally {
+                  setIsUpdatingRate(false);
+                }
+              }}
+              disabled={isUpdatingRate}
+              className="bg-accent px-6 py-4 rounded-2xl"
+            >
+              <Text className="text-primary font-bold">{isUpdatingRate ? '...' : 'Set'}</Text>
+            </TouchableOpacity>
+          </View>
         </AppCard>
 
         {/* Main Merchant Card */}

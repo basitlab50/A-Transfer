@@ -85,8 +85,13 @@ const AMerchants = ({ route, navigation }: Props) => {
                 <Text className="text-textSecondary text-xs ml-1">{item.country}</Text>
               </View>
             </View>
-            <View className="bg-surface px-3 py-1 rounded-full border border-slate-800">
-              <Text className="text-accent text-[10px] font-bold">VERIFIED</Text>
+            <View className="items-end">
+              <View className="bg-accent/10 px-3 py-1 rounded-full border border-accent/20 mb-2">
+                <Text className="text-accent text-[10px] font-bold">RATE: ${item.sellingRate || '1.50'}</Text>
+              </View>
+              <View className="bg-surface px-3 py-1 rounded-full border border-slate-800">
+                <Text className="text-textSecondary text-[10px] font-bold">VERIFIED</Text>
+              </View>
             </View>
           </View>
 

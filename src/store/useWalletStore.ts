@@ -76,7 +76,7 @@ interface WalletState {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isAdminMode: boolean;
-  userProfile: { name: string, email: string, aid: string, phone: string, country: string } | null;
+  userProfile: { name: string, email: string, aid: string, phone: string, country: string, sellingRate?: number } | null;
   merchantStatus: 'none' | 'pending' | 'approved' | 'declined';
   activeTransaction: any | null;
   pendingRequests: any[];
@@ -111,6 +111,7 @@ interface WalletState {
   markNotificationAsRead: (id: string) => Promise<void>;
   resetMerchantStatus: () => Promise<void>;
   fetchAllTransactions: () => Promise<any[]>;
+  updateMerchantRate: (rate: number) => Promise<void>;
 }
 
 const MOCK_TRANSACTIONS: Transaction[] = [
@@ -251,6 +252,19 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         set({ merchantStatus: 'pending' });
       } catch (error) {
         console.error('Error applying for merchant:', error);
+        throw error;
+      }
+    }
+  },
+  updateMerchantRate: async (rate: number) => {
+    if (auth.currentUser) {
+      try {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+          sellingRate: rate
+        });
+        // Profile listener will pick up the change
+      } catch (error) {
+        console.error('Error updating merchant rate:', error);
         throw error;
       }
     }
