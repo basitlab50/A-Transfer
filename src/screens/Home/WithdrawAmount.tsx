@@ -38,13 +38,16 @@ const WithdrawAmount = ({ route, navigation }: any) => {
   const currencySymbol = country?.currencySymbol || '$';
   const currencyCode = country?.currencyCode || 'USD';
 
+  const merchantBuyRate = merchant?.buyingRate || 0.90;
+  const effectiveRate = merchantBuyRate * rate;
+
   const creditsToSell = isLocalCurrencyMode 
-    ? (parseFloat(inputValue) || 0) / (rate || 1)
+    ? (parseFloat(inputValue) || 0) / (effectiveRate || 1)
     : (parseFloat(inputValue) || 0);
 
   const localPayout = isLocalCurrencyMode
     ? (parseFloat(inputValue) || 0)
-    : (parseFloat(inputValue) || 0) * (rate || 1);
+    : (parseFloat(inputValue) || 0) * (effectiveRate || 1);
 
   const [showNetworkPicker, setShowNetworkPicker] = useState(false);
   const availableNetworks = country?.momoNetworks || ['Other'];

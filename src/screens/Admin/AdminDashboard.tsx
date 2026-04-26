@@ -54,6 +54,8 @@ const AdminDashboard = ({ navigation }: any) => {
   const [mBuyRate, setMBuyRate] = useState(systemSettings?.merchantBuyRate?.toString() || '0');
   const [mMinRate, setMMinRate] = useState(systemSettings?.merchantSellRange?.min?.toString() || '0');
   const [mMaxRate, setMMaxRate] = useState(systemSettings?.merchantSellRange?.max?.toString() || '0');
+  const [mBuyMinRate, setMBuyMinRate] = useState(systemSettings?.merchantBuyRange?.min?.toString() || '0');
+  const [mBuyMaxRate, setMBuyMaxRate] = useState(systemSettings?.merchantBuyRange?.max?.toString() || '0');
 
   useEffect(() => {
     loadUsers();
@@ -65,6 +67,8 @@ const AdminDashboard = ({ navigation }: any) => {
       setMBuyRate(systemSettings.merchantBuyRate?.toString() || '0');
       setMMinRate(systemSettings.merchantSellRange?.min?.toString() || '0');
       setMMaxRate(systemSettings.merchantSellRange?.max?.toString() || '0');
+      setMBuyMinRate(systemSettings.merchantBuyRange?.min?.toString() || '0');
+      setMBuyMaxRate(systemSettings.merchantBuyRange?.max?.toString() || '0');
     }
   }, [systemSettings]);
 
@@ -119,6 +123,10 @@ const AdminDashboard = ({ navigation }: any) => {
         merchantSellRange: {
           min: parseFloat(mMinRate) || 0,
           max: parseFloat(mMaxRate) || 0
+        },
+        merchantBuyRange: {
+          min: parseFloat(mBuyMinRate) || 0,
+          max: parseFloat(mBuyMaxRate) || 0
         }
       });
       Alert.alert('Success', 'Global settings updated!');
@@ -509,10 +517,10 @@ const AdminDashboard = ({ navigation }: any) => {
                 <Text style={{ color: '#475569', fontSize: 10, marginTop: 10, italic: true }}>* This is the price merchants pay the platform per A-Credit.</Text>
               </View>
 
-              <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 15, letterSpacing: 1 }}>Global Merchant Sell Range</Text>
+              <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 15, letterSpacing: 1 }}>Global Merchant SELL Range (User Buys)</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <View style={{ width: '48%', backgroundColor: '#112240', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
-                  <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginBottom: 10 }}>MIN RATE</Text>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginBottom: 10 }}>MIN SELL ($)</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 16, width: '100%' }}>
                     <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16 }}>$</Text>
                     <TextInput 
@@ -524,7 +532,7 @@ const AdminDashboard = ({ navigation }: any) => {
                   </View>
                 </View>
                 <View style={{ width: '48%', backgroundColor: '#112240', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
-                  <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginBottom: 10 }}>MAX RATE</Text>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginBottom: 10 }}>MAX SELL ($)</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 16, width: '100%' }}>
                     <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}>$</Text>
                     <TextInput 
@@ -532,6 +540,34 @@ const AdminDashboard = ({ navigation }: any) => {
                       keyboardType="decimal-pad"
                       value={mMaxRate}
                       onChangeText={setMMaxRate}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 15, letterSpacing: 1 }}>Global Merchant BUY Range (User Sells)</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                <View style={{ width: '48%', backgroundColor: '#112240', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginBottom: 10 }}>MIN BUY ($)</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 16, width: '100%' }}>
+                    <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16 }}>$</Text>
+                    <TextInput 
+                      style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 18, flex: 1, paddingVertical: 12, textAlign: 'right' }}
+                      keyboardType="decimal-pad"
+                      value={mBuyMinRate}
+                      onChangeText={setMBuyMinRate}
+                    />
+                  </View>
+                </View>
+                <View style={{ width: '48%', backgroundColor: '#112240', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden' }}>
+                  <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginBottom: 10 }}>MAX BUY ($)</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 16, width: '100%' }}>
+                    <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}>$</Text>
+                    <TextInput 
+                      style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 18, flex: 1, paddingVertical: 12, textAlign: 'right' }}
+                      keyboardType="decimal-pad"
+                      value={mBuyMaxRate}
+                      onChangeText={setMBuyMaxRate}
                     />
                   </View>
                 </View>

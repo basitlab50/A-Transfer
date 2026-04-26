@@ -76,7 +76,7 @@ interface WalletState {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isAdminMode: boolean;
-  userProfile: { name: string, email: string, aid: string, phone: string, country: string, sellingRate?: number } | null;
+  userProfile: { name: string, email: string, aid: string, phone: string, country: string, sellingRate?: number, buyingRate?: number } | null;
   merchantStatus: 'none' | 'pending' | 'approved' | 'declined';
   activeTransaction: any | null;
   pendingRequests: any[];
@@ -84,6 +84,7 @@ interface WalletState {
     exchangeRates: { [key: string]: number };
     merchantBuyRate: number;
     merchantSellRange: { min: number; max: number };
+    merchantBuyRange: { min: number; max: number };
     maintenanceMode: boolean;
   };
   notifications: AppNotification[];
@@ -113,6 +114,7 @@ interface WalletState {
   resetMerchantStatus: () => Promise<void>;
   fetchAllTransactions: () => Promise<any[]>;
   updateMerchantRate: (rate: number) => Promise<void>;
+  updateMerchantBuyRate: (rate: number) => Promise<void>;
 }
 
 const MOCK_TRANSACTIONS: Transaction[] = [
@@ -166,6 +168,10 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     merchantSellRange: {
       min: 1.2,
       max: 1.7
+    },
+    merchantBuyRange: {
+      min: 0.8,
+      max: 1.0
     },
     maintenanceMode: false
   },
@@ -396,6 +402,16 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       throw error;
     }
   },
+  updateMerchantBuyRate: async (rate: number) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const docRef = doc(db, 'users', user.uid);
+    await updateDoc(docRef, { buyingRate: rate });
+    set(state => ({
+      userProfile: state.userProfile ? { ...state.userProfile, buyingRate: rate } : null
+    }));
+  },
+
   updateUserStatus: async (uid, updates) => {
     try {
       await updateDoc(doc(db, 'users', uid), updates);

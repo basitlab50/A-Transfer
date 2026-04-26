@@ -40,7 +40,9 @@ const MerchantDashboard = ({ navigation }: any) => {
   } = useWalletStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mRate, setMRate] = useState(userProfile?.sellingRate?.toString() || '1.5');
+  const [bRate, setBRate] = useState(userProfile?.buyingRate?.toString() || '0.9');
   const [isUpdatingRate, setIsUpdatingRate] = useState(false);
+  const [isUpdatingBuyRate, setIsUpdatingBuyRate] = useState(false);
 
   const currentCountry = availableCountries.find(c => c.name === userCountry);
   const rate = currentCountry?.rate || 1;
@@ -159,12 +161,12 @@ const MerchantDashboard = ({ navigation }: any) => {
           />
         </AppCard>
 
-        {/* Market Pricing Card */}
+        {/* Market Selling Price Card */}
         <AppCard className="mb-6 border-slate-800/50">
           <View className="flex-row justify-between items-center mb-4">
             <View>
-              <Text className="text-textPrimary font-bold">Market Rate</Text>
-              <Text className="text-textSecondary text-xs">Your selling price to users</Text>
+              <Text className="text-textPrimary font-bold">Market Sell Rate</Text>
+              <Text className="text-textSecondary text-xs">Users buy from you at this rate</Text>
             </View>
             <View className="bg-accent/10 px-3 py-1 rounded-full">
               <Text className="text-accent text-[10px] font-bold">RANGE: ${systemSettings.merchantSellRange.min} - ${systemSettings.merchantSellRange.max}</Text>
@@ -177,7 +179,7 @@ const MerchantDashboard = ({ navigation }: any) => {
               <TextInput 
                 value={mRate}
                 onChangeText={setMRate}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 className="flex-1 text-textPrimary font-bold text-lg h-12"
                 placeholder="0.00"
                 placeholderTextColor="#475569"
@@ -193,7 +195,7 @@ const MerchantDashboard = ({ navigation }: any) => {
                 setIsUpdatingRate(true);
                 try {
                   await updateMerchantRate(rate);
-                  Alert.alert('Success', 'Market rate updated!');
+                  Alert.alert('Success', 'Selling rate updated!');
                 } catch (e) {
                   Alert.alert('Error', 'Failed to update rate');
                 } finally {
@@ -204,6 +206,55 @@ const MerchantDashboard = ({ navigation }: any) => {
               className="bg-accent px-6 py-4 rounded-2xl"
             >
               <Text className="text-primary font-bold">{isUpdatingRate ? '...' : 'Set'}</Text>
+            </TouchableOpacity>
+          </View>
+        </AppCard>
+
+        {/* Market Buying Price Card */}
+        <AppCard className="mb-6 border-slate-800/50">
+          <View className="flex-row justify-between items-center mb-4">
+            <View>
+              <Text className="text-textPrimary font-bold">Market Buy Rate</Text>
+              <Text className="text-textSecondary text-xs">Users sell to you at this rate</Text>
+            </View>
+            <View className="bg-orange/10 px-3 py-1 rounded-full">
+              <Text className="text-orange text-[10px] font-bold">RANGE: ${systemSettings.merchantBuyRange.min} - ${systemSettings.merchantBuyRange.max}</Text>
+            </View>
+          </View>
+          
+          <View className="flex-row items-center space-x-3">
+            <View className="flex-1 flex-row items-center bg-primary border border-slate-800 rounded-2xl px-4 py-1">
+              <Text className="text-textPrimary font-bold text-lg mr-2">$</Text>
+              <TextInput 
+                value={bRate}
+                onChangeText={setBRate}
+                keyboardType="decimal-pad"
+                className="flex-1 text-textPrimary font-bold text-lg h-12"
+                placeholder="0.00"
+                placeholderTextColor="#475569"
+              />
+            </View>
+            <TouchableOpacity 
+              onPress={async () => {
+                const rate = parseFloat(bRate);
+                if (isNaN(rate) || rate < systemSettings.merchantBuyRange.min || rate > systemSettings.merchantBuyRange.max) {
+                  Alert.alert('Invalid Rate', `Please set a rate between $${systemSettings.merchantBuyRange.min} and $${systemSettings.merchantBuyRange.max}`);
+                  return;
+                }
+                setIsUpdatingBuyRate(true);
+                try {
+                  await updateMerchantBuyRate(rate);
+                  Alert.alert('Success', 'Buying rate updated!');
+                } catch (e) {
+                  Alert.alert('Error', 'Failed to update rate');
+                } finally {
+                  setIsUpdatingBuyRate(false);
+                }
+              }}
+              disabled={isUpdatingBuyRate}
+              className="bg-orange px-6 py-4 rounded-2xl"
+            >
+              <Text className="text-white font-bold">{isUpdatingBuyRate ? '...' : 'Set'}</Text>
             </TouchableOpacity>
           </View>
         </AppCard>
