@@ -446,33 +446,42 @@ const AdminDashboard = ({ navigation }: any) => {
               <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 15, letterSpacing: 1 }}>Merchant Purchase Price</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
                 <Text style={{ color: '#F8FAFC', fontWeight: 'bold', flex: 1 }}>Buy A-Credit Rate</Text>
-                <TextInput 
-                  style={{ backgroundColor: '#0A192F', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12, color: '#eab308', fontWeight: 'bold', width: 120, textAlign: 'right' }}
-                  keyboardType="numeric"
-                  value={String(mBuyRate)}
-                  onChangeText={(val) => setMBuyRate(parseFloat(val) || 0)}
-                />
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A192F', paddingHorizontal: 12, borderRadius: 12, width: 120 }}>
+                  <Text style={{ color: '#eab308', fontWeight: 'bold' }}>$</Text>
+                  <TextInput 
+                    style={{ flex: 1, paddingVertical: 8, color: '#eab308', fontWeight: 'bold', textAlign: 'right' }}
+                    keyboardType="numeric"
+                    value={String(mBuyRate)}
+                    onChangeText={(val) => setMBuyRate(parseFloat(val) || 0)}
+                  />
+                </View>
               </View>
 
               <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 15, letterSpacing: 1 }}>Global Merchant Sell Range</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <View style={{ width: '48%', backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
                   <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 5 }}>MIN RATE</Text>
-                  <TextInput 
-                    style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16 }}
-                    keyboardType="numeric"
-                    value={String(mSellRange.min)}
-                    onChangeText={(val) => setMSellRange({...mSellRange, min: parseFloat(val) || 0})}
-                  />
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16 }}>$</Text>
+                    <TextInput 
+                      style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 16, flex: 1, marginLeft: 2 }}
+                      keyboardType="numeric"
+                      value={String(mSellRange.min)}
+                      onChangeText={(val) => setMSellRange({...mSellRange, min: parseFloat(val) || 0})}
+                    />
+                  </View>
                 </View>
                 <View style={{ width: '48%', backgroundColor: '#112240', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' }}>
                   <Text style={{ color: '#94A3B8', fontSize: 9, marginBottom: 5 }}>MAX RATE</Text>
-                  <TextInput 
-                    style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}
-                    keyboardType="numeric"
-                    value={String(mSellRange.max)}
-                    onChangeText={(val) => setMSellRange({...mSellRange, max: parseFloat(val) || 0})}
-                  />
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16 }}>$</Text>
+                    <TextInput 
+                      style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 16, flex: 1, marginLeft: 2 }}
+                      keyboardType="numeric"
+                      value={String(mSellRange.max)}
+                      onChangeText={(val) => setMSellRange({...mSellRange, max: parseFloat(val) || 0})}
+                    />
+                  </View>
                 </View>
               </View>
             </ScrollView>
