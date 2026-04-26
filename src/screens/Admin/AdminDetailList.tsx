@@ -40,12 +40,23 @@ const AdminDetailList = ({ route, navigation }: any) => {
         setData(users.filter((u: any) => u.merchantStatus === 'approved').map(u => ({ ...u, _itemType: 'user' })));
       } else if (type === 'circulation') {
         const transactions = await fetchAllTransactions();
-        // Combine and mark types
+        
+        // Enhance transactions with user AID and Email for better searching
+        const transactionsWithUser = transactions.map(t => {
+          const user = users.find(u => u.id === t.userId);
+          return {
+            ...t,
+            _itemType: 'transaction',
+            userAid: user?.aid || 'N/A',
+            userEmail: user?.email || 'N/A'
+          };
+        });
+
         const combined = [
           ...users.map(u => ({ ...u, _itemType: 'user' })),
-          ...transactions.map(t => ({ ...t, _itemType: 'transaction' }))
+          ...transactionsWithUser
         ];
-        // Sort users by balance by default, transactions will be searched
+        // Sort users by balance by default
         setData(combined.sort((a: any, b: any) => (b.balance || 0) - (a.balance || 0)));
       }
     } catch (err) {
@@ -62,9 +73,11 @@ const AdminDetailList = ({ route, navigation }: any) => {
              (item.email || '').toLowerCase().includes(s) ||
              (item.aid || '').includes(search);
     } else {
-      // Transaction search: ID, Name, Status, Type
+      // Transaction search: ID, Name, Status, Type, AID, Email
       return (item.id || '').toLowerCase().includes(s) ||
              (item.userName || '').toLowerCase().includes(s) ||
+             (item.userEmail || '').toLowerCase().includes(s) ||
+             (item.userAid || '').includes(search) ||
              (item.status || '').toLowerCase().includes(s) ||
              (item.type || '').toLowerCase().includes(s) ||
              (item.userPhone || '').includes(search);
