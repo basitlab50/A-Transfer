@@ -22,7 +22,8 @@ import {
   History,
   LayoutDashboard,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  User
 } from 'lucide-react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 import { AppCard } from '../../components/ui/AppCard';
