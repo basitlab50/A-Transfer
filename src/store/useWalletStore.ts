@@ -648,7 +648,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         const qTx = query(
           collection(db, 'ongoing_transactions'),
           where('userId', '==', user.uid),
-          where('status', 'in', ['awaiting_confirmation', 'awaiting_merchant_payment', 'merchant_paid'])
+          where('status', 'in', ['awaiting_confirmation', 'awaiting_merchant_payment', 'merchant_paid', 'cancellation_requested', 'cancelled'])
         );
         
         unsubscribeActiveTx = onSnapshot(qTx, (snapshot) => {
@@ -739,7 +739,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         const qOngoingMerchant = query(
           collection(db, 'ongoing_transactions'),
           where('merchantId', '==', user.uid),
-          where('status', 'in', ['awaiting_confirmation', 'awaiting_merchant_payment', 'merchant_paid'])
+          where('status', 'in', ['awaiting_confirmation', 'awaiting_merchant_payment', 'merchant_paid', 'cancellation_requested', 'cancelled'])
         );
 
         unsubscribeOngoingMerchant = onSnapshot(qOngoingMerchant, (snapshot) => {

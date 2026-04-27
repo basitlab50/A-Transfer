@@ -209,25 +209,20 @@ const TransactionStatus = ({ route, navigation }: any) => {
 
   const isDeposit = tx.type === 'deposit';
   const isCompleted = tx.status === 'completed';
+  const isCancelled = tx.status === 'cancelled';
   const isPaid = tx.status === 'merchant_paid' || tx.status === 'awaiting_merchant_payment';
   const isAssigning = tx.merchantId === 'SYSTEM_AUTO_ASSIGN';
+  const canRequestCancel = !isDeposit && !isCompleted && !isCancelled;
 
-  if (isCompleted) {
+  if (isCompleted || isCancelled) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#0A192F', padding: 30 }}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <CheckCircle2 color="#76b33a" size={90} />
-          <Text style={{ color: '#fff', fontSize: 32, fontWeight: 'bold', marginTop: 30 }}>Success!</Text>
-          <Text style={{ color: '#76b33a', fontSize: 18, fontWeight: 'bold' }}>Transaction Completed</Text>
-          <TouchableOpacity onPress={handleFinish} style={{ backgroundColor: '#76b33a', width: '100%', padding: 22, borderRadius: 24, marginTop: 50, alignItems: 'center' }}>
+          {isCompleted ? <CheckCircle2 color="#76b33a" size={90} /> : <XCircle color="#ef4444" size={90} />}
+          <Text style={{ color: '#fff', fontSize: 32, fontWeight: 'bold', marginTop: 30 }}>{isCompleted ? 'Success!' : 'Cancelled'}</Text>
+          <Text style={{ color: isCompleted ? '#76b33a' : '#ef4444', fontSize: 18, fontWeight: 'bold' }}>{isCompleted ? 'Transaction Completed' : 'Order Cancelled Successfully'}</Text>
+          <TouchableOpacity onPress={handleFinish} style={{ backgroundColor: isCompleted ? '#76b33a' : '#334155', width: '100%', padding: 22, borderRadius: 24, marginTop: 50, alignItems: 'center' }}>
             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Return to Dashboard</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('Receipt', { transaction: tx })}
-            style={{ width: '100%', padding: 22, borderRadius: 24, marginTop: 15, alignItems: 'center', borderWidth: 1, borderColor: '#334155' }}
-          >
-            <Text style={{ color: '#94A3B8', fontWeight: 'bold', fontSize: 18 }}>View Receipt</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -239,13 +234,17 @@ const TransactionStatus = ({ route, navigation }: any) => {
       <View style={{ paddingHorizontal: 25, paddingVertical: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <TouchableOpacity onPress={() => navigation.goBack()}><ArrowLeft color="#fff" size={20} /></TouchableOpacity>
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Transfer Status</Text>
-        <TouchableOpacity 
-          onPress={handleCancelOrder}
-          className="bg-red-500/10 px-3 py-1.5 rounded-full flex-row items-center border border-red-500/20"
-        >
-          <XCircle color="#ef4444" size={14} />
-          <Text className="text-red-500 text-[10px] font-bold ml-1 uppercase">Cancel Order</Text>
-        </TouchableOpacity>
+        {canRequestCancel && (
+          <TouchableOpacity 
+            onPress={handleCancelOrder}
+            className="bg-red-500/10 px-3 py-1.5 rounded-full flex-row items-center border border-red-500/20"
+          >
+            <XCircle color="#ef4444" size={14} />
+            <Text className="text-red-500 text-[10px] font-bold ml-1 uppercase">
+              {(!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? 'Cancel Order' : 'Request for Cancellation'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>

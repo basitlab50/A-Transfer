@@ -291,9 +291,9 @@ const Dashboard = ({ navigation }: Props) => {
                     <Text className="text-orange font-bold text-base">{tx.type === 'withdraw' ? 'Withdrawal' : 'Deposit'}</Text>
                     <Text className="text-textSecondary text-[8px] font-mono mb-1">ID: {tx.id || 'N/A'}</Text>
                     <Text className="text-textSecondary text-[10px] uppercase font-bold tracking-widest">
-                      {tx.type === 'withdraw' 
+                      {tx.status === 'cancelled' ? '❌ ORDER CANCELLED' : (tx.status === 'cancellation_requested' ? '⏳ CANCELLATION PENDING' : (tx.type === 'withdraw' 
                         ? (tx.status === 'merchant_paid' ? '🔥 PAID - CONFIRM NOW' : '⏳ WAITING FOR MERCHANT')
-                        : (tx.status === 'awaiting_confirmation' ? '⏳ WAITING FOR APPROVAL' : '⏳ PROCESSING')}
+                        : (tx.status === 'awaiting_confirmation' ? '⏳ WAITING FOR APPROVAL' : '⏳ PROCESSING')))}
                     </Text>
                   </View>
                   <ChevronRight color="#df7c27" size={20} />

@@ -139,7 +139,19 @@ const MerchantOngoingTransactions = ({ navigation }: any) => {
                 )}
               </View>
 
-              {item.status === 'cancellation_requested' ? (
+              {item.status === 'cancelled' ? (
+                <View className="bg-slate-800/50 p-5 rounded-[24px] border border-slate-700 items-center">
+                  <XCircle color="#94A3B8" size={32} />
+                  <Text className="text-white font-bold mt-2">ORDER CANCELLED</Text>
+                  <Text className="text-textSecondary text-[10px] text-center mt-1 mb-4">This withdrawal was successfully cancelled and the credits have been released.</Text>
+                  <TouchableOpacity 
+                    className="w-full bg-slate-700 py-3 rounded-xl items-center"
+                    onPress={() => updateDoc(doc(db, 'ongoing_transactions', item.id), { status: 'archived' })}
+                  >
+                    <Text className="text-white font-bold text-xs">Dismiss Order</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : item.status === 'cancellation_requested' ? (
                 <View className="bg-red-500/10 p-5 rounded-[24px] border border-red-500/20">
                   <View className="flex-row items-center mb-3">
                     <AlertCircle color="#EF4444" size={20} />
