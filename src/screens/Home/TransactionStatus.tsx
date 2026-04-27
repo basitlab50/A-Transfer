@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, SafeAreaView, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Modal } from 'react-native';
 import { db, auth } from '../../config/firebase';
 import { doc, onSnapshot, runTransaction, increment, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { CheckCircle2, Clock, ArrowLeft, Wallet, XCircle, Info, RefreshCw, Home, ArrowUpCircle, ArrowDownCircle, PlaneTakeoff, Landmark, Smartphone, AlertCircle } from 'lucide-react-native';
@@ -12,6 +12,7 @@ const TransactionStatus = ({ route, navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [bridging, setBridging] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const requestCancellation = useWalletStore(state => state.requestCancellation);
 
   const fetchTx = async () => {
@@ -251,30 +252,7 @@ const TransactionStatus = ({ route, navigation }: any) => {
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Transfer Status</Text>
         {canRequestCancel && (
           <TouchableOpacity 
-            onPress={() => {
-              if (!tx || !tx.id) return;
-              Alert.alert(
-                (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? "Cancel Order?" : "Request Cancellation?",
-                (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? "Are you sure?" : "Merchant is assigned. Request approval?",
-                [
-                  { text: "No", style: "cancel" },
-                  { 
-                    text: "Yes, Proceed", 
-                    onPress: async () => {
-                      try {
-                        if (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') {
-                          await updateDoc(doc(db, 'ongoing_transactions', tx.id), { status: 'cancelled', cancelledAt: new Date().toISOString() });
-                          handleFinish();
-                        } else {
-                          await requestCancellation(tx.id);
-                          Alert.alert("Sent", "Cancellation request sent.");
-                        }
-                      } catch (e: any) { Alert.alert("Error", e.message); }
-                    }
-                  }
-                ]
-              );
-            }}
+            onPress={() => setShowCancelModal(true)}
             style={{ backgroundColor: '#ef4444', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
             hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           >
@@ -285,6 +263,59 @@ const TransactionStatus = ({ route, navigation }: any) => {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* CUSTOM CANCELLATION MODAL */}
+      <Modal
+        visible={showCancelModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCancelModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: 30 }}>
+          <View style={{ backgroundColor: '#1E293B', width: '100%', borderRadius: 40, padding: 35, alignItems: 'center', borderWidth: 1, borderColor: '#334155' }}>
+            <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 20, borderRadius: 30, marginBottom: 20 }}>
+              <XCircle color="#ef4444" size={40} />
+            </View>
+            
+            <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 15 }}>
+              {(!tx?.merchantId || tx?.merchantId === 'SYSTEM_AUTO_ASSIGN') ? "Cancel Order?" : "Request Cancellation?"}
+            </Text>
+            
+            <Text style={{ color: '#94A3B8', textAlign: 'center', marginBottom: 30, lineHeight: 22, fontSize: 16 }}>
+              {(!tx?.merchantId || tx?.merchantId === 'SYSTEM_AUTO_ASSIGN') 
+                ? "Are you sure you want to cancel this transfer? This action cannot be undone." 
+                : "The merchant has been assigned. We need their approval to ensure funds haven't already been sent. Send request now?"}
+            </Text>
+
+            <TouchableOpacity 
+              onPress={async () => {
+                setShowCancelModal(false);
+                try {
+                  if (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') {
+                    await updateDoc(doc(db, 'ongoing_transactions', tx.id), { status: 'cancelled', cancelledAt: new Date().toISOString() });
+                    handleFinish();
+                  } else {
+                    await requestCancellation(tx.id);
+                    Alert.alert("Success", "Cancellation request sent to merchant.");
+                  }
+                } catch (e: any) {
+                  Alert.alert("Error", e.message);
+                }
+              }}
+              style={{ backgroundColor: '#ef4444', width: '100%', padding: 20, borderRadius: 24, alignItems: 'center', marginBottom: 15 }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Confirm Action</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => setShowCancelModal(false)}
+              style={{ width: '100%', padding: 20, borderRadius: 24, alignItems: 'center', borderWidth: 1, borderColor: '#334155' }}
+            >
+              <Text style={{ color: '#94A3B8', fontWeight: 'bold', fontSize: 18 }}>Nevermind</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         {/* Progress Header */}
