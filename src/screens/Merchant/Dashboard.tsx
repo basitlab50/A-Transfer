@@ -200,7 +200,7 @@ const MerchantDashboard = ({ navigation }: any) => {
                 setIsUpdatingRate(true);
                 try {
                   await updateMerchantRate(rate);
-                  Alert.alert('Success', 'Selling rate updated!');
+                  Alert.alert('Success ✨', 'Market Selling Rate has been set successfully!');
                 } catch (e: any) {
                   Alert.alert('Error', e.message || 'Failed to update rate');
                 } finally {
@@ -251,7 +251,7 @@ const MerchantDashboard = ({ navigation }: any) => {
                 setIsUpdatingBuyRate(true);
                 try {
                   await updateMerchantBuyRate(rate);
-                  Alert.alert('Success', 'Buying rate updated!');
+                  Alert.alert('Success ✨', 'Market Buying Rate has been set successfully!');
                 } catch (e: any) {
                   Alert.alert('Error', e.message || 'Failed to update rate');
                 } finally {
@@ -261,7 +261,7 @@ const MerchantDashboard = ({ navigation }: any) => {
               disabled={isUpdatingBuyRate || !isBuyRateValid || bRate === ''}
               className={`${(isUpdatingBuyRate || !isBuyRateValid || bRate === '') ? 'bg-slate-800 opacity-50' : 'bg-orange'} px-6 py-4 rounded-2xl`}
             >
-              <Text className="text-white font-bold">{isUpdatingBuyRate ? '...' : 'Set'}</Text>
+              <Text className={`${(isUpdatingBuyRate || !isBuyRateValid || bRate === '') ? 'text-textSecondary' : 'text-white'} font-bold`}>{isUpdatingBuyRate ? '...' : 'Set'}</Text>
             </TouchableOpacity>
           </View>
           {!isBuyRateValid && (
