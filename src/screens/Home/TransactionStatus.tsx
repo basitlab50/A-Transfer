@@ -420,9 +420,12 @@ const TransactionStatus = ({ route, navigation }: any) => {
                {processing ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Yes, Release A-Credit</Text>}
             </TouchableOpacity>
             
-            <View style={{ marginTop: 20, alignItems: 'center' }}>
-              <Text style={{ color: '#94A3B8', fontSize: 14, fontWeight: 'medium' }}>Funds not received yet.</Text>
-            </View>
+            <TouchableOpacity 
+              onPress={() => Alert.alert("Still Waiting?", "Local bank transfers can sometimes take 15-30 minutes to reflect. If you still haven't received your funds after 30 minutes, please contact our support team immediately.")}
+              style={{ marginTop: 20, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#94A3B8', fontSize: 14, fontWeight: 'medium', textDecorationLine: 'underline' }}>Funds not received yet.</Text>
+            </TouchableOpacity>
           </View>
         )}
 
