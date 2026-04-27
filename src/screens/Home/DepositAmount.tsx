@@ -42,8 +42,6 @@ const DepositAmount = ({ route, navigation }: any) => {
 
   const sellingMin = merchant?.sellingMin || 5;
   const merchantInventory = merchant?.merchantInventory || 0;
-  const isOutOfRange = creditsToBuy > 0 && (creditsToSell < sellingMin || creditsToBuy > merchantInventory);
-  // Note: fixed a typo in logic above if I wrote creditsToSell, should be creditsToBuy
   const isOutOfRangeActual = creditsToBuy > 0 && (creditsToBuy < sellingMin || creditsToBuy > merchantInventory);
 
   const handleIHavePaid = async () => {
