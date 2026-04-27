@@ -265,6 +265,12 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     }
   },
   updateMerchantRate: async (rate: number) => {
+    const state = get();
+    const { min, max } = state.systemSettings.merchantSellRange;
+    if (rate < min || rate > max) {
+      throw new Error(`Rate must be between ${min} and ${max}`);
+    }
+
     if (auth.currentUser) {
       try {
         await updateDoc(doc(db, 'users', auth.currentUser.uid), {
@@ -403,13 +409,24 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     }
   },
   updateMerchantBuyRate: async (rate: number) => {
+    const state = get();
+    const { min, max } = state.systemSettings.merchantBuyRange;
+    if (rate < min || rate > max) {
+      throw new Error(`Rate must be between ${min} and ${max}`);
+    }
+
     const user = auth.currentUser;
     if (!user) return;
-    const docRef = doc(db, 'users', user.uid);
-    await updateDoc(docRef, { buyingRate: rate });
-    set(state => ({
-      userProfile: state.userProfile ? { ...state.userProfile, buyingRate: rate } : null
-    }));
+    try {
+      const docRef = doc(db, 'users', user.uid);
+      await updateDoc(docRef, { buyingRate: rate });
+      set(state => ({
+        userProfile: state.userProfile ? { ...state.userProfile, buyingRate: rate } : null
+      }));
+    } catch (error) {
+      console.error('Error updating merchant buy rate:', error);
+      throw error;
+    }
   },
 
   updateUserStatus: async (uid, updates) => {
