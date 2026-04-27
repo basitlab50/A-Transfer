@@ -264,13 +264,13 @@ const Dashboard = ({ navigation }: Props) => {
           </View>
         </AppCard>
 
-        {/* Quick Transfer - Primary Action */}
+        {/* Quick Transfer Primary Action */}
         <View className="items-center mb-8">
           <AppButton 
             title="Quick Transfer" 
             variant="accent" 
-            className="w-full py-5 shadow-xl shadow-accent/10 rounded-[28px]" 
-            textClassName="text-lg font-bold"
+            className="px-12 py-4 shadow-xl shadow-accent/10 rounded-[24px] w-full" 
+            textClassName="text-lg"
             icon={<Repeat color="#76b33a" size={20} />}
             onPress={() => navigation.navigate('SelectCountry', { mode: 'transfer' })}
           />
@@ -353,6 +353,8 @@ const Dashboard = ({ navigation }: Props) => {
             </View>
           </Animated.View>
         )}
+
+
 
         {/* Branded Services Section */}
         <View className="flex-row justify-between items-center mb-6">

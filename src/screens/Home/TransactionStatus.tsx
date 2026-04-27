@@ -249,34 +249,44 @@ const TransactionStatus = ({ route, navigation }: any) => {
       <View style={{ paddingHorizontal: 25, paddingVertical: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <TouchableOpacity onPress={() => navigation.goBack()}><ArrowLeft color="#fff" size={20} /></TouchableOpacity>
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Transfer Status</Text>
-        <View style={{ width: 20 }} />
-      </View>
-
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* FORCE CANCELLATION BUTTON FOR TESTING */}
-        <View style={{ margin: 25, zIndex: 9999 }}>
+        {canRequestCancel && (
           <TouchableOpacity 
             onPress={() => {
+              if (!tx || !tx.id) return;
               Alert.alert(
-                "Confirm Cancellation?",
-                "This will request the merchant to cancel the order.",
+                (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? "Cancel Order?" : "Request Cancellation?",
+                (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? "Are you sure?" : "Merchant is assigned. Request approval?",
                 [
                   { text: "No", style: "cancel" },
-                  { text: "YES, REQUEST CANCEL", onPress: async () => {
-                    try {
-                      await requestCancellation(transactionId);
-                      Alert.alert("SENT", "Request has been sent.");
-                    } catch (e: any) { Alert.alert("Error", e.message); }
-                  }}
+                  { 
+                    text: "Yes, Proceed", 
+                    onPress: async () => {
+                      try {
+                        if (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') {
+                          await updateDoc(doc(db, 'ongoing_transactions', tx.id), { status: 'cancelled', cancelledAt: new Date().toISOString() });
+                          handleFinish();
+                        } else {
+                          await requestCancellation(tx.id);
+                          Alert.alert("Sent", "Cancellation request sent.");
+                        }
+                      } catch (e: any) { Alert.alert("Error", e.message); }
+                    }
+                  }
                 ]
               );
             }}
-            style={{ backgroundColor: '#ef4444', padding: 25, borderRadius: 20, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: '#991b1b' }}
+            style={{ backgroundColor: '#ef4444', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           >
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>FORCE REQUEST CANCEL</Text>
+            <XCircle color="#fff" size={14} />
+            <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold', marginLeft: 4 }}>
+              {(!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? 'CANCEL' : 'REQUEST CANCEL'}
+            </Text>
           </TouchableOpacity>
-        </View>
+        )}
+      </View>
 
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         {/* Progress Header */}
         <View style={{ marginHorizontal: 25, backgroundColor: '#1E293B', padding: 30, borderRadius: 40, alignItems: 'center', marginBottom: 30 }}>
            <View style={{ backgroundColor: '#0A192F', padding: 15, borderRadius: 20, marginBottom: 15 }}>
@@ -298,45 +308,6 @@ const TransactionStatus = ({ route, navigation }: any) => {
             <Text style={{ color: '#94A3B8', lineHeight: 20 }}>
               You have requested to cancel this order. We are waiting for the merchant to approve the cancellation to ensure no funds are lost.
             </Text>
-          </View>
-        )}
-
-        {/* Withdrawal Cancellation Button (Only for withdrawals) */}
-        {(tx.type?.toLowerCase() === 'withdraw' || tx.type?.toLowerCase() === 'withdrawal') && tx.status !== 'completed' && tx.status !== 'cancelled' && (
-          <View style={{ marginHorizontal: 25, marginBottom: 30 }}>
-            <TouchableOpacity 
-              onPress={() => {
-                Alert.alert(
-                  "Request Cancellation?",
-                  "Since a merchant is involved, we need their approval to cancel. Proceed?",
-                  [
-                    { text: "No", style: "cancel" },
-                    { 
-                      text: "Yes, Request Now", 
-                      onPress: async () => {
-                        try {
-                          if (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') {
-                            await updateDoc(doc(db, 'ongoing_transactions', transactionId), { 
-                              status: 'cancelled', 
-                              cancelledAt: new Date().toISOString() 
-                            });
-                            handleFinish();
-                          } else {
-                            await requestCancellation(transactionId);
-                          }
-                        } catch (e: any) {
-                          Alert.alert("Error", e.message);
-                        }
-                      }
-                    }
-                  ]
-                );
-              }}
-              style={{ backgroundColor: '#ef4444', padding: 22, borderRadius: 24, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
-            >
-              <XCircle color="#fff" size={20} />
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, marginLeft: 10 }}>REQUEST FOR CANCELLATION</Text>
-            </TouchableOpacity>
           </View>
         )}
 
