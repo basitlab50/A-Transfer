@@ -69,7 +69,8 @@ interface WalletState {
   merchants: Merchant[];
   // Merchant State
   isMerchantMode: boolean;
-  isOnline: boolean;
+  isAcceptingBuy: boolean;
+  isAcceptingSell: boolean;
   merchantInventory: number;
   merchantEarnings: number;
   isKYCVerified: boolean;
@@ -97,7 +98,8 @@ interface WalletState {
   setUserCountry: (country: string) => void;
   toggleMerchantMode: () => void;
   toggleAdminMode: () => void;
-  toggleOnlineStatus: () => void;
+  toggleBuyStatus: () => void;
+  toggleSellStatus: () => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string, phone: string, country: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -147,7 +149,8 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   transactions: MOCK_TRANSACTIONS,
   merchants: MOCK_MERCHANTS,
   isMerchantMode: false,
-  isOnline: true,
+  isAcceptingBuy: true,
+  isAcceptingSell: true,
   isKYCVerified: false,
   isAuthenticated: false,
   isAdmin: false,
@@ -199,7 +202,22 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   setUserCountry: (countryName) => set({ userCountry: countryName }),
   toggleMerchantMode: () => set((state) => ({ isMerchantMode: !state.isMerchantMode })),
   toggleAdminMode: () => set((state) => ({ isAdminMode: !state.isAdminMode })),
-  toggleOnlineStatus: () => set((state) => ({ isOnline: !state.isOnline })),
+  toggleBuyStatus: async () => {
+    const state = get();
+    const newStatus = !state.isAcceptingBuy;
+    set({ isAcceptingBuy: newStatus });
+    if (auth.currentUser) {
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), { isAcceptingBuy: newStatus });
+    }
+  },
+  toggleSellStatus: async () => {
+    const state = get();
+    const newStatus = !state.isAcceptingSell;
+    set({ isAcceptingSell: newStatus });
+    if (auth.currentUser) {
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), { isAcceptingSell: newStatus });
+    }
+  },
   signIn: async (email, password) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -582,6 +600,8 @@ export const useWalletStore = create<WalletState>((set, get) => ({
               userCountry: data.country || 'Ghana',
               isKYCVerified: data.isKYCVerified || false,
               merchantStatus: data.merchantStatus || 'none',
+              isAcceptingBuy: data.isAcceptingBuy ?? true,
+              isAcceptingSell: data.isAcceptingSell ?? true,
               isAdmin: data.isAdmin === true
             });
             console.log('--- ADMIN STATUS SYNCED ---', data.isAdmin === true);

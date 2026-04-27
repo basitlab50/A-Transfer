@@ -34,11 +34,13 @@ const AMerchants = ({ route, navigation }: Props) => {
     setPermissionError(false);
     try {
       console.log('Fetching Approved Merchants for:', selectedCountryName);
-      const approvedMerchants = await fetchApprovedMerchants(selectedCountryName);
+      let approvedMerchants = await fetchApprovedMerchants(selectedCountryName);
       
-      if (approvedMerchants.length === 0) {
-        // If empty, it could be actual 0 or a permission issue (which fetchApprovedMerchants handles by returning [])
-        // But we added a console log in the store to help us debug
+      // Filter based on mode and merchant availability
+      if (mode === 'deposit') {
+        approvedMerchants = approvedMerchants.filter(m => m.isAcceptingBuy !== false);
+      } else if (mode === 'withdraw') {
+        approvedMerchants = approvedMerchants.filter(m => m.isAcceptingSell !== false);
       }
       
       setMerchants(approvedMerchants);

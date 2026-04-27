@@ -150,23 +150,47 @@ const MerchantDashboard = ({ navigation }: any) => {
           </View>
         </View>
 
-        {/* Online Status Toggle Card */}
-        <AppCard className="mb-6 flex-row items-center justify-between border-slate-800/50 py-4">
-          <View className="flex-row items-center">
-            <View className={`w-12 h-12 rounded-2xl items-center justify-center mr-4 ${isOnline ? 'bg-accent/10' : 'bg-slate-800'}`}>
-              <TrendingUp color={isOnline ? "#76b33a" : "#94A3B8"} size={24} />
+        {/* Availability Status Card */}
+        <AppCard className="mb-6 border-slate-800/50 p-6">
+          <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-4">Availability Controls</Text>
+          
+          <View className="flex-row items-center justify-between mb-6">
+            <View className="flex-row items-center">
+              <View className={`w-10 h-10 rounded-xl items-center justify-center mr-3 ${isAcceptingBuy ? 'bg-accent/10' : 'bg-slate-800'}`}>
+                <ShoppingBag color={isAcceptingBuy ? "#76b33a" : "#94A3B8"} size={20} />
+              </View>
+              <View>
+                <Text className="text-textPrimary font-bold text-sm">Accept Buy Requests</Text>
+                <Text className="text-textSecondary text-[10px]">Users buying credits from you</Text>
+              </View>
             </View>
-            <View>
-              <Text className="text-textPrimary font-bold">Accepting Requests</Text>
-              <Text className="text-textSecondary text-xs">Visible to local users</Text>
-            </View>
+            <Switch 
+              value={isAcceptingBuy} 
+              onValueChange={toggleBuyStatus}
+              trackColor={{ false: '#1E293B', true: '#76b33a' }}
+              thumbColor="#FFFFFF"
+            />
           </View>
-          <Switch 
-            value={isOnline} 
-            onValueChange={toggleOnlineStatus}
-            trackColor={{ false: '#1E293B', true: '#76b33a' }}
-            thumbColor="#FFFFFF"
-          />
+
+          <View className="h-[1px] bg-slate-800/50 mb-6" />
+
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center">
+              <View className={`w-10 h-10 rounded-xl items-center justify-center mr-3 ${isAcceptingSell ? 'bg-orange/10' : 'bg-slate-800'}`}>
+                <Landmark color={isAcceptingSell ? "#df7c27" : "#94A3B8"} size={20} />
+              </View>
+              <View>
+                <Text className="text-textPrimary font-bold text-sm">Accept Sell Requests</Text>
+                <Text className="text-textSecondary text-[10px]">Users selling credits to you</Text>
+              </View>
+            </View>
+            <Switch 
+              value={isAcceptingSell} 
+              onValueChange={toggleSellStatus}
+              trackColor={{ false: '#1E293B', true: '#df7c27' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
         </AppCard>
 
         {/* Market Selling Price Card */}
