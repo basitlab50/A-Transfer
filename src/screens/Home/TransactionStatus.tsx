@@ -251,13 +251,36 @@ const TransactionStatus = ({ route, navigation }: any) => {
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Transfer Status</Text>
         {canRequestCancel && (
           <TouchableOpacity 
-            onPress={handleCancelOrder}
-            style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.2)' }}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            onPress={() => {
+              if (!tx || !tx.id) return;
+              Alert.alert(
+                (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? "Cancel Order?" : "Request Cancellation?",
+                (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? "Are you sure?" : "Merchant is assigned. Request approval?",
+                [
+                  { text: "No", style: "cancel" },
+                  { 
+                    text: "Yes, Proceed", 
+                    onPress: async () => {
+                      try {
+                        if (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') {
+                          await updateDoc(doc(db, 'ongoing_transactions', tx.id), { status: 'cancelled', cancelledAt: new Date().toISOString() });
+                          handleFinish();
+                        } else {
+                          await requestCancellation(tx.id);
+                          Alert.alert("Sent", "Cancellation request sent.");
+                        }
+                      } catch (e: any) { Alert.alert("Error", e.message); }
+                    }
+                  }
+                ]
+              );
+            }}
+            style={{ backgroundColor: '#ef4444', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           >
-            <XCircle color="#ef4444" size={14} />
-            <Text style={{ color: '#ef4444', fontSize: 10, fontWeight: 'bold', marginLeft: 4, textTransform: 'uppercase' }}>
-              {(!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? 'Cancel Order' : 'Request for Cancellation'}
+            <XCircle color="#fff" size={14} />
+            <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold', marginLeft: 4 }}>
+              {(!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') ? 'CANCEL' : 'REQUEST CANCEL'}
             </Text>
           </TouchableOpacity>
         )}
