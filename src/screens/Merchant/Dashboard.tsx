@@ -84,9 +84,9 @@ const MerchantDashboard = ({ navigation }: any) => {
         <View className="flex-row justify-between items-center mb-6 h-16 z-50">
           <View>
             <View className="flex-row items-center mb-1">
-              <View className={`w-2 h-2 rounded-full mr-2 ${isOnline ? 'bg-accent shadow-[0_0_8px_rgba(118,179,58,0.8)]' : 'bg-slate-500'}`} />
+              <View className={`w-2 h-2 rounded-full mr-2 ${(isAcceptingBuy || isAcceptingSell) ? 'bg-accent shadow-[0_0_8px_rgba(118,179,58,0.8)]' : 'bg-slate-500'}`} />
               <Text className="text-textSecondary text-[10px] uppercase font-bold tracking-widest">
-                {isOnline ? 'Active & Receiving' : 'Offline / Private'}
+                {(isAcceptingBuy || isAcceptingSell) ? 'Active & Receiving' : 'Offline / Private'}
               </Text>
             </View>
             <Text className="text-textPrimary text-xl font-bold">Merchant Hub</Text>
