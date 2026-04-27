@@ -41,19 +41,23 @@ const MerchantDashboard = ({ navigation }: any) => {
     userProfile,
     updateMerchantRate,
     updateMerchantBuyRate,
-    updateMerchantBuyLimits
+    updateMerchantBuyLimits,
+    updateMerchantSellMin
   } = useWalletStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mRate, setMRate] = useState(userProfile?.sellingRate?.toString() || '1.5');
   const [bRate, setBRate] = useState(userProfile?.buyingRate?.toString() || '0.9');
+  const [minSellLimit, setMinSellLimit] = useState(userProfile?.sellingMin?.toString() || '5');
   const [minBuyLimit, setMinBuyLimit] = useState(userProfile?.buyingMin?.toString() || '10');
   const [maxBuyLimit, setMaxBuyLimit] = useState(userProfile?.buyingMax?.toString() || '1000');
   const [isUpdatingRate, setIsUpdatingRate] = useState(false);
   const [isUpdatingBuyRate, setIsUpdatingBuyRate] = useState(false);
   const [isUpdatingLimits, setIsUpdatingLimits] = useState(false);
+  const [isUpdatingSellMin, setIsUpdatingSellMin] = useState(false);
   const [showSellSuccess, setShowSellSuccess] = useState(false);
   const [showBuySuccess, setShowBuySuccess] = useState(false);
   const [showLimitSuccess, setShowLimitSuccess] = useState(false);
+  const [showSellLimitSuccess, setShowSellLimitSuccess] = useState(false);
 
   const sellRateNum = parseFloat(mRate);
   const isSellRateValid = mRate === '' || (!isNaN(sellRateNum) && sellRateNum >= systemSettings.merchantSellRange.min && sellRateNum <= systemSettings.merchantSellRange.max);
@@ -180,6 +184,57 @@ const MerchantDashboard = ({ navigation }: any) => {
               thumbColor="#FFFFFF"
             />
           </View>
+
+          {isAcceptingBuy && (
+            <Animated.View entering={FadeInUp} className="mt-6 pt-6 border-t border-slate-800/50">
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-textPrimary font-bold text-xs">Sales Range (A-Credits)</Text>
+                {showSellLimitSuccess && <Text className="text-accent text-[8px] font-bold">LIMITS SAVED! ✨</Text>}
+              </View>
+              
+              <View className="flex-row items-center space-x-3 mb-4">
+                <View className="flex-1 bg-primary border border-slate-800 rounded-xl px-3 py-1">
+                  <Text className="text-textSecondary text-[8px] uppercase font-bold mb-1">Min Order</Text>
+                  <TextInput 
+                    value={minSellLimit}
+                    onChangeText={setMinSellLimit}
+                    keyboardType="numeric"
+                    className="text-textPrimary font-bold h-8 p-0"
+                    placeholder="5"
+                    placeholderTextColor="#475569"
+                  />
+                </View>
+                <View className="flex-1 bg-slate-800/30 border border-slate-800/50 rounded-xl px-3 py-1 opacity-60">
+                  <Text className="text-textSecondary text-[8px] uppercase font-bold mb-1">Max (Your Stock)</Text>
+                  <Text className="text-textPrimary font-bold h-8 flex items-center">{merchantInventory} A</Text>
+                </View>
+                <TouchableOpacity 
+                  onPress={async () => {
+                    const min = parseFloat(minSellLimit);
+                    if (isNaN(min) || min <= 0) {
+                      Alert.alert('Invalid Limit', 'Please enter a valid minimum amount');
+                      return;
+                    }
+                    setIsUpdatingSellMin(true);
+                    try {
+                      await updateMerchantSellMin(min);
+                      setShowSellLimitSuccess(true);
+                      setTimeout(() => setShowSellLimitSuccess(false), 3000);
+                    } catch (e: any) {
+                      Alert.alert('Error', e.message || 'Failed to update limit');
+                    } finally {
+                      setIsUpdatingSellMin(false);
+                    }
+                  }}
+                  disabled={isUpdatingSellMin}
+                  className="bg-accent px-4 py-3 rounded-xl justify-center items-center"
+                >
+                  <CheckCircle2 color="#0A192F" size={20} />
+                </TouchableOpacity>
+              </View>
+              <Text className="text-textSecondary text-[10px] italic">Max order is automatically capped by your Liquidity Inventory.</Text>
+            </Animated.View>
+          )}
 
           <View className="h-[1px] bg-slate-800/50 mb-6" />
 

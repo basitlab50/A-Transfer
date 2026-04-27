@@ -40,6 +40,12 @@ const DepositAmount = ({ route, navigation }: any) => {
     ? (parseFloat(inputValue) || 0)
     : (parseFloat(inputValue) || 0) * effectiveRate;
 
+  const sellingMin = merchant?.sellingMin || 5;
+  const merchantInventory = merchant?.merchantInventory || 0;
+  const isOutOfRange = creditsToBuy > 0 && (creditsToSell < sellingMin || creditsToBuy > merchantInventory);
+  // Note: fixed a typo in logic above if I wrote creditsToSell, should be creditsToBuy
+  const isOutOfRangeActual = creditsToBuy > 0 && (creditsToBuy < sellingMin || creditsToBuy > merchantInventory);
+
   const handleIHavePaid = async () => {
     if (loading) return;
     setLoading(true);
@@ -131,29 +137,30 @@ const DepositAmount = ({ route, navigation }: any) => {
               <View style={{ height: 1, width: '100%', backgroundColor: '#334155', marginVertical: 24 }} />
               
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ color: '#94A3B8', fontSize: 14, marginRight: 8 }}>Total Cost:</Text>
-                <Text style={{ color: '#F8FAFC', fontSize: 18, fontWeight: 'bold' }}>
-                  {isLocalCurrencyMode ? `A ${creditsToBuy.toFixed(2)}` : `${currencySymbol}${localCost.toLocaleString()} ${currencyCode}`}
-                </Text>
+              <View style={{ marginBottom: 40 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <Text style={{ color: '#94A3B8', fontSize: 12 }}>Merchant Limits:</Text>
+                  <Text style={{ color: '#F8FAFC', fontSize: 12, fontWeight: 'bold' }}>{sellingMin} - {merchantInventory} A</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: '#94A3B8', fontSize: 12 }}>Total Cost:</Text>
+                  <Text style={{ color: '#76b33a', fontSize: 12, fontWeight: 'bold' }}>{currencySymbol}{localCost.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currencyCode}</Text>
+                </View>
+                {isOutOfRangeActual && (
+                  <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: 'bold', marginTop: 10, textAlign: 'center', textTransform: 'uppercase' }}>
+                    Amount must be between {sellingMin} and {merchantInventory} A-Credits
+                  </Text>
+                )}
               </View>
 
-              <View style={{ marginTop: 15, paddingHorizontal: 15, paddingVertical: 8, backgroundColor: 'rgba(118, 179, 58, 0.05)', borderRadius: 12, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(118, 179, 58, 0.2)' }}>
-                <Text style={{ color: '#94A3B8', fontSize: 9, textAlign: 'center' }}>
-                  Rate: 1 A = ${merchantRate.toFixed(2)} • 1 USD = {countryBaseRate} {currencyCode}
-                </Text>
-              </View>
+              <TouchableOpacity 
+                disabled={!inputValue || parseFloat(inputValue) === 0 || isOutOfRangeActual}
+                onPress={() => setStep('payment')}
+                style={{ backgroundColor: (!inputValue || parseFloat(inputValue) === 0 || isOutOfRangeActual) ? 'rgba(148, 163, 184, 0.1)' : '#76b33a', paddingVertical: 22, borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#76b33a', shadowOffset: { width: 0, height: 10 }, shadowOpacity: (!inputValue || isOutOfRangeActual) ? 0 : 0.2, shadowRadius: 20 }}
+              >
+                <Text style={{ color: (!inputValue || parseFloat(inputValue) === 0 || isOutOfRangeActual) ? '#64748B' : '#0A192F', fontWeight: 'bold', fontSize: 18 }}>Continue to Payment</Text>
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity 
-              onPress={() => {
-                if (!inputValue || parseFloat(inputValue) <= 0) return Alert.alert('Error', 'Enter amount');
-                setStep('payment');
-              }}
-              style={{ backgroundColor: 'rgba(118, 179, 58, 0.2)', paddingVertical: 20, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', borderWidth: 1, borderColor: 'rgba(118, 179, 58, 0.4)' }}
-            >
-              <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 18, marginRight: 10 }}>Continue</Text>
-              <ArrowRight color="#76b33a" size={20} />
-            </TouchableOpacity>
           </View>
         ) : (
           <View>

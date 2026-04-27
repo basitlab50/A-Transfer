@@ -109,6 +109,7 @@ interface WalletState {
   // Admin Actions
   fetchAllUsers: () => Promise<any[]>;
   updateMerchantBuyLimits: (min: number, max: number) => Promise<void>;
+  updateMerchantSellMin: (min: number) => Promise<void>;
   updateUserStatus: (uid: string, updates: Partial<Merchant>) => Promise<void>;
   allocateCredits: (uid: string, amount: number, type: 'balance' | 'inventory') => Promise<void>;
   updateGlobalSettings: (updates: any) => Promise<void>;
@@ -462,6 +463,23 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Error updating buy limits:', error);
+      throw error;
+    }
+  },
+
+  updateMerchantSellMin: async (min: number) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      const docRef = doc(db, 'users', user.uid);
+      await updateDoc(docRef, { 
+        sellingMin: min
+      });
+      set(state => ({
+        userProfile: state.userProfile ? { ...state.userProfile, sellingMin: min } : null
+      }));
+    } catch (error) {
+      console.error('Error updating sell min:', error);
       throw error;
     }
   },
