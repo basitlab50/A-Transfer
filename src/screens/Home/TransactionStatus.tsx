@@ -332,13 +332,32 @@ const TransactionStatus = ({ route, navigation }: any) => {
         {/* Cancellation Alert */}
         {tx.status === 'cancellation_requested' && (
           <View style={{ marginHorizontal: 25, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 25, borderRadius: 32, borderWidth: 1, borderColor: '#ef444433', marginBottom: 30 }}>
-            <View className="flex-row items-center mb-2">
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
               <AlertCircle color="#ef4444" size={18} />
               <Text style={{ color: '#ef4444', fontSize: 16, fontWeight: 'bold', marginLeft: 8 }}>Cancellation Requested</Text>
             </View>
             <Text style={{ color: '#94A3B8', lineHeight: 20 }}>
               You have requested to cancel this order. We are waiting for the merchant to approve the cancellation to ensure no funds are lost.
             </Text>
+          </View>
+        )}
+
+        {/* Cancellation Denied Alert */}
+        {tx.cancellationDeniedAt && (
+          <View style={{ marginHorizontal: 25, backgroundColor: 'rgba(234, 179, 8, 0.1)', padding: 25, borderRadius: 32, borderWidth: 1, borderColor: '#eab30833', marginBottom: 30 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+              <AlertCircle color="#eab308" size={18} />
+              <Text style={{ color: '#eab308', fontSize: 16, fontWeight: 'bold', marginLeft: 8 }}>Cancellation Denied</Text>
+            </View>
+            <Text style={{ color: '#94A3B8', lineHeight: 20, marginBottom: 15 }}>
+              The merchant did not allow cancellation as they have already paid or are in the process of paying your local currency.
+            </Text>
+            <TouchableOpacity 
+              onPress={() => updateDoc(doc(db, 'ongoing_transactions', tx.id), { cancellationDeniedAt: null })}
+              style={{ backgroundColor: 'rgba(234, 179, 8, 0.2)', paddingVertical: 10, borderRadius: 12, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#eab308', fontWeight: 'bold', fontSize: 12 }}>I Understand</Text>
+            </TouchableOpacity>
           </View>
         )}
 
