@@ -13,7 +13,7 @@ interface Props {
 }
 
 const AMerchants = ({ route, navigation }: Props) => {
-  const { country: selectedCountryName } = route.params || {};
+  const { country: selectedCountryName, mode } = route.params || {};
   const { fetchApprovedMerchants, availableCountries } = useWalletStore();
   
   const [merchants, setMerchants] = useState<any[]>([]);
@@ -54,7 +54,7 @@ const AMerchants = ({ route, navigation }: Props) => {
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: `Merchants in ${selectedCountryName || 'Region'}`,
+      headerTitle: mode === 'deposit' ? 'Select Merchant (Buy)' : mode === 'withdraw' ? 'Select Merchant (Sell)' : `Merchants in ${selectedCountryName || 'Region'}`,
       headerRight: () => (
         <TouchableOpacity 
           onPress={() => navigation.navigate('SelectCountry')}
@@ -87,12 +87,16 @@ const AMerchants = ({ route, navigation }: Props) => {
             </View>
             <View className="items-end">
               <View className="flex-row items-center mb-2">
-                <View className="bg-accent/10 px-2 py-0.5 rounded-md border border-accent/20 mr-1">
-                  <Text className="text-accent text-[8px] font-bold">SELL: ${item.sellingRate?.toFixed(2) || '1.50'}</Text>
-                </View>
-                <View className="bg-orange/10 px-2 py-0.5 rounded-md border border-orange/20">
-                  <Text className="text-orange text-[8px] font-bold">BUY: ${item.buyingRate?.toFixed(2) || '0.90'}</Text>
-                </View>
+                {(!mode || mode === 'deposit') && (
+                  <View className="bg-accent/10 px-2 py-0.5 rounded-md border border-accent/20 mr-1">
+                    <Text className="text-accent text-[8px] font-bold">DEPOSIT: ${item.sellingRate?.toFixed(2) || '1.50'}</Text>
+                  </View>
+                )}
+                {(!mode || mode === 'withdraw') && (
+                  <View className="bg-orange/10 px-2 py-0.5 rounded-md border border-orange/20">
+                    <Text className="text-orange text-[8px] font-bold">WITHDRAW: ${item.buyingRate?.toFixed(2) || '0.90'}</Text>
+                  </View>
+                )}
               </View>
               <View className="bg-surface px-3 py-1 rounded-full border border-slate-800">
                 <Text className="text-textSecondary text-[10px] font-bold">VERIFIED</Text>
@@ -113,25 +117,29 @@ const AMerchants = ({ route, navigation }: Props) => {
           </View>
 
           <View className="flex-row">
-            <AppButton 
-              title="Deposit / Buy" 
-              variant="accent" 
-              size="small"
-              className="flex-1 mr-2"
-              icon={<CreditCard color="#76b33a" size={14} />}
-              onPress={() => {
-                navigation.navigate('DepositAmount' as any, { merchant: item });
-              }}
-            />
-            <AppButton 
-              title="Withdraw / Sell" 
-              variant="outline" 
-              size="small"
-              className="flex-1 ml-2 border-slate-800"
-              onPress={() => {
-                navigation.navigate('WithdrawAmount' as any, { merchant: item });
-              }}
-            />
+            {(!mode || mode === 'deposit') && (
+              <AppButton 
+                title="Deposit / Buy" 
+                variant="accent" 
+                size="small"
+                className="flex-1 mr-2"
+                icon={<CreditCard color="#76b33a" size={14} />}
+                onPress={() => {
+                  navigation.navigate('DepositAmount' as any, { merchant: item });
+                }}
+              />
+            )}
+            {(!mode || mode === 'withdraw') && (
+              <AppButton 
+                title="Withdraw / Sell" 
+                variant="outline" 
+                size="small"
+                className="flex-1 ml-2 border-slate-800"
+                onPress={() => {
+                  navigation.navigate('WithdrawAmount' as any, { merchant: item });
+                }}
+              />
+            )}
           </View>
         </AppCard>
       </Animated.View>
