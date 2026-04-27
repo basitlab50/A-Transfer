@@ -292,10 +292,15 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         const txData = txSnap.data();
 
         if (approved) {
-          // If it was a withdrawal in escrow, return funds to user
-          if (txData.type === 'withdraw' && txData.inEscrow) {
-            const uRef = doc(db, 'users', txData.userId);
-            transaction.update(uRef, { balance: increment(txData.amount) });
+          // Reversion logic
+          if (txData.inEscrow) {
+            if (txData.type === 'withdraw') {
+              const uRef = doc(db, 'users', txData.userId);
+              transaction.update(uRef, { balance: increment(txData.amount) });
+            } else if (txData.type === 'deposit') {
+              const mRef = doc(db, 'users', txData.merchantId);
+              transaction.update(mRef, { merchantInventory: increment(txData.amount) });
+            }
           }
           transaction.update(txRef, { status: 'cancelled', cancelledAt: new Date().toISOString(), inEscrow: false });
         } else {

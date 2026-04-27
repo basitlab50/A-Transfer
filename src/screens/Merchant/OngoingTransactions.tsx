@@ -186,15 +186,16 @@ const MerchantOngoingTransactions = ({ navigation }: any) => {
                       
                       if (isDeposit) {
                         await runTransaction(db, async (transaction) => {
-                          const mRef = doc(db, 'users', item.merchantId);
                           const uRef = doc(db, 'users', item.userId);
-                          const mSnap = await transaction.get(mRef);
-                          const inv = Number(mSnap.data().merchantInventory || 0);
-                          const amt = Number(item.amount);
-                          if (inv < amt) throw new Error('Insufficient Inventory');
-                          transaction.update(mRef, { merchantInventory: increment(-amt) });
-                          transaction.update(uRef, { balance: increment(amt) });
-                          transaction.update(txRef, { status: 'completed', completedAt: new Date().toISOString() });
+                          const tRef = doc(db, 'ongoing_transactions', item.id);
+                          const tSnap = await transaction.get(tRef);
+                          if (!tSnap.exists()) throw new Error('Order not found');
+                          if (tSnap.data().status === 'completed') throw new Error('Already completed');
+
+                          // Note: Inventory was already deducted at initiation (Escrow)
+                          // Now we just release to the user
+                          transaction.update(uRef, { balance: increment(item.amount) });
+                          transaction.update(tRef, { status: 'completed', completedAt: new Date().toISOString(), inEscrow: false });
                         });
                         setLastTx({ ...item, status: 'completed' });
                         setSuccessMessage('Credits Delivered!');

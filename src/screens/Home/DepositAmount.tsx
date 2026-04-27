@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Alert, ActivityIndicator, Button } from 'react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 import { db, auth } from '../../config/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, runTransaction, increment, updateDoc } from 'firebase/firestore';
 import { ArrowRightLeft, ArrowRight, ShoppingBag, Landmark, Smartphone, CheckCircle2, Home, Clock } from 'lucide-react-native';
 
 const DepositAmount = ({ route, navigation }: any) => {
@@ -45,32 +45,44 @@ const DepositAmount = ({ route, navigation }: any) => {
   const isOutOfRangeActual = creditsToBuy > 0 && (creditsToBuy < sellingMin || creditsToBuy > merchantInventory);
 
   const handleIHavePaid = async () => {
-    if (loading) return;
     setLoading(true);
     try {
-      const txId = 'TX' + Date.now() + Math.random().toString(36).substr(2, 4).toUpperCase();
-      const transaction = {
-        userId: auth.currentUser?.uid || 'anonymous',
-        userName: userProfile?.name || auth.currentUser?.displayName || 'User',
-        userPhone: userProfile?.phone || 'N/A',
-        merchantId: merchant.id,
-        amount: Number(creditsToBuy),
-        localAmount: localCost,
-        finalAmount: Number(creditsToBuy),
-        currencyCode: currencyCode,
-        status: 'awaiting_confirmation',
-        timestamp: new Date().toISOString(),
-        type: 'deposit',
-        senderCountry: merchant.country,
-        destinationCountry: 'A-Wallet',
-        senderCurrency: currencyCode,
-        recipientCurrency: 'A-Credit',
-        merchantDetails: merchant.paymentDetails || {}
-      };
-      await setDoc(doc(db, 'ongoing_transactions', txId), transaction);
+      const txId = 'DEP' + Date.now();
+      const amt = Number(creditsToBuy);
+
+      await runTransaction(db, async (transaction) => {
+        const mRef = doc(db, 'users', merchant.id);
+        const mSnap = await transaction.get(mRef);
+        if (!mSnap.exists()) throw new Error('Merchant not found');
+        
+        const currentInventory = mSnap.data().merchantInventory || 0;
+        if (currentInventory < amt) throw new Error('Merchant has insufficient inventory for this request.');
+
+        const txData = {
+          userId: auth.currentUser?.uid || 'anonymous',
+          userName: userProfile?.name || 'User',
+          userPhone: userProfile?.phone || '',
+          merchantId: merchant.id,
+          amount: amt,
+          localAmount: localCost,
+          currencyCode,
+          status: 'awaiting_confirmation',
+          timestamp: new Date().toISOString(),
+          type: 'deposit',
+          senderCountry: merchant.country,
+          destinationCountry: 'A-Wallet',
+          senderCurrency: currencyCode,
+          recipientCurrency: 'A-Credit',
+          inEscrow: true
+        };
+
+        transaction.update(mRef, { merchantInventory: increment(-amt) });
+        transaction.set(doc(db, 'ongoing_transactions', txId), txData);
+      });
+
       setStep('success');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to save transaction');
+      Alert.alert('DEPOSIT ERROR', err.message || 'Failed to save transaction');
     } finally {
       setLoading(false);
     }
