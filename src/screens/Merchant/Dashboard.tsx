@@ -44,6 +44,12 @@ const MerchantDashboard = ({ navigation }: any) => {
   const [isUpdatingRate, setIsUpdatingRate] = useState(false);
   const [isUpdatingBuyRate, setIsUpdatingBuyRate] = useState(false);
 
+  const sellRateNum = parseFloat(mRate);
+  const isSellRateValid = mRate === '' || (!isNaN(sellRateNum) && sellRateNum >= systemSettings.merchantSellRange.min && sellRateNum <= systemSettings.merchantSellRange.max);
+
+  const buyRateNum = parseFloat(bRate);
+  const isBuyRateValid = bRate === '' || (!isNaN(buyRateNum) && buyRateNum >= systemSettings.merchantBuyRange.min && buyRateNum <= systemSettings.merchantBuyRange.max);
+
   const currentCountry = availableCountries.find(c => c.name === userCountry);
   const rate = currentCountry?.rate || 1;
   const currencySymbol = currentCountry?.currencySymbol || '$';
@@ -174,7 +180,7 @@ const MerchantDashboard = ({ navigation }: any) => {
           </View>
           
           <View className="flex-row items-center space-x-3">
-            <View className="flex-1 flex-row items-center bg-primary border border-slate-800 rounded-2xl px-4 py-1">
+            <View className={`flex-1 flex-row items-center bg-primary border ${!isSellRateValid ? 'border-red-500' : 'border-slate-800'} rounded-2xl px-4 py-1`}>
               <Text className="text-textPrimary font-bold text-lg mr-2">$</Text>
               <TextInput 
                 value={mRate}
@@ -189,25 +195,27 @@ const MerchantDashboard = ({ navigation }: any) => {
               onPress={async () => {
                 const rate = parseFloat(mRate);
                 if (isNaN(rate) || rate < systemSettings.merchantSellRange.min || rate > systemSettings.merchantSellRange.max) {
-                  Alert.alert('Invalid Rate', `Please set a rate between $${systemSettings.merchantSellRange.min} and $${systemSettings.merchantSellRange.max}`);
                   return;
                 }
                 setIsUpdatingRate(true);
                 try {
                   await updateMerchantRate(rate);
                   Alert.alert('Success', 'Selling rate updated!');
-                } catch (e) {
-                  Alert.alert('Error', 'Failed to update rate');
+                } catch (e: any) {
+                  Alert.alert('Error', e.message || 'Failed to update rate');
                 } finally {
                   setIsUpdatingRate(false);
                 }
               }}
-              disabled={isUpdatingRate}
-              className="bg-accent px-6 py-4 rounded-2xl"
+              disabled={isUpdatingRate || !isSellRateValid || mRate === ''}
+              className={`${(isUpdatingRate || !isSellRateValid || mRate === '') ? 'bg-slate-800 opacity-50' : 'bg-accent'} px-6 py-4 rounded-2xl`}
             >
-              <Text className="text-primary font-bold">{isUpdatingRate ? '...' : 'Set'}</Text>
+              <Text className={`${(isUpdatingRate || !isSellRateValid || mRate === '') ? 'text-textSecondary' : 'text-primary'} font-bold`}>{isUpdatingRate ? '...' : 'Set'}</Text>
             </TouchableOpacity>
           </View>
+          {!isSellRateValid && (
+            <Text className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider">Rate must be between ${systemSettings.merchantSellRange.min} and ${systemSettings.merchantSellRange.max}</Text>
+          )}
         </AppCard>
 
         {/* Market Buying Price Card */}
@@ -223,7 +231,7 @@ const MerchantDashboard = ({ navigation }: any) => {
           </View>
           
           <View className="flex-row items-center space-x-3">
-            <View className="flex-1 flex-row items-center bg-primary border border-slate-800 rounded-2xl px-4 py-1">
+            <View className={`flex-1 flex-row items-center bg-primary border ${!isBuyRateValid ? 'border-red-500' : 'border-slate-800'} rounded-2xl px-4 py-1`}>
               <Text className="text-textPrimary font-bold text-lg mr-2">$</Text>
               <TextInput 
                 value={bRate}
@@ -238,25 +246,27 @@ const MerchantDashboard = ({ navigation }: any) => {
               onPress={async () => {
                 const rate = parseFloat(bRate);
                 if (isNaN(rate) || rate < systemSettings.merchantBuyRange.min || rate > systemSettings.merchantBuyRange.max) {
-                  Alert.alert('Invalid Rate', `Please set a rate between $${systemSettings.merchantBuyRange.min} and $${systemSettings.merchantBuyRange.max}`);
                   return;
                 }
                 setIsUpdatingBuyRate(true);
                 try {
                   await updateMerchantBuyRate(rate);
                   Alert.alert('Success', 'Buying rate updated!');
-                } catch (e) {
-                  Alert.alert('Error', 'Failed to update rate');
+                } catch (e: any) {
+                  Alert.alert('Error', e.message || 'Failed to update rate');
                 } finally {
                   setIsUpdatingBuyRate(false);
                 }
               }}
-              disabled={isUpdatingBuyRate}
-              className="bg-orange px-6 py-4 rounded-2xl"
+              disabled={isUpdatingBuyRate || !isBuyRateValid || bRate === ''}
+              className={`${(isUpdatingBuyRate || !isBuyRateValid || bRate === '') ? 'bg-slate-800 opacity-50' : 'bg-orange'} px-6 py-4 rounded-2xl`}
             >
               <Text className="text-white font-bold">{isUpdatingBuyRate ? '...' : 'Set'}</Text>
             </TouchableOpacity>
           </View>
+          {!isBuyRateValid && (
+            <Text className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider">Rate must be between ${systemSettings.merchantBuyRange.min} and ${systemSettings.merchantBuyRange.max}</Text>
+          )}
         </AppCard>
 
         {/* Main Merchant Card */}
