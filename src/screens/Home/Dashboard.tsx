@@ -15,17 +15,32 @@ interface Props {
 }
 
 const Dashboard = ({ navigation }: Props) => {
-  const { balance, userCountry, availableCountries, transactions, toggleMerchantMode, toggleAdminMode, isKYCVerified, userProfile, signOut, merchantStatus, isAdmin, activeTransaction, notifications, resetMerchantStatus } = useWalletStore();
+  const { 
+    balance, 
+    userCountry, 
+    availableCountries, 
+    transactions, 
+    toggleMerchantMode, 
+    toggleAdminMode, 
+    isKYCVerified, 
+    userProfile, 
+    signOut, 
+    merchantStatus, 
+    isAdmin, 
+    ongoingUserTransactions,
+    notifications, 
+    resetMerchantStatus 
+  } = useWalletStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   // Reset dismiss state whenever a NEW transaction appears
   React.useEffect(() => {
-    if (activeTransaction?.id) {
+    if (ongoingUserTransactions.length > 0) {
       setIsBannerDismissed(false);
     }
-  }, [activeTransaction?.id]);
+  }, [ongoingUserTransactions.length]);
 
   const handleLogout = () => {
     setIsMenuOpen(false);
@@ -204,8 +219,6 @@ const Dashboard = ({ navigation }: Props) => {
 
         {/* The Branded A-Wallet Card */}
         <AppCard variant="gradient" className="mb-6 py-4 relative">
-          {/* Brand Green to Orange Glow background logic handled by component variant if needed, 
-              but adding a custom branded touch here */}
           <View className="absolute -right-16 -bottom-16 w-60 h-60 bg-accent/10 rounded-full blur-3xl opacity-50" />
           <View className="absolute -left-16 -top-16 w-60 h-60 bg-orange/10 rounded-full blur-3xl opacity-30" />
 
@@ -251,44 +264,43 @@ const Dashboard = ({ navigation }: Props) => {
           </View>
         </AppCard>
 
-        {/* Ongoing Transaction Tracker */}
-        {activeTransaction && !isBannerDismissed && (
-          <Animated.View entering={FadeInUp} className="mb-6">
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('TransactionStatus', { transactionId: activeTransaction.id })}
-              className="bg-orange/10 p-5 rounded-[28px] border border-orange/20 flex-row items-center"
-            >
-              <View className="w-12 h-12 rounded-2xl bg-orange/20 items-center justify-center mr-4">
-                <RefreshCcw color="#df7c27" size={24} />
+        {/* Ongoing Transactions Stack */}
+        {ongoingUserTransactions.length > 0 && (
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center mb-4 px-2">
+              <Text className="text-textPrimary font-bold text-lg">Active Orders</Text>
+              <View className="bg-orange/20 px-2 py-0.5 rounded-md">
+                <Text className="text-orange text-[10px] font-bold uppercase">{ongoingUserTransactions.length} Ongoing</Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-orange font-bold text-base">Ongoing Transaction</Text>
-                <Text className="text-textSecondary text-[8px] font-mono mb-1">ID: {activeTransaction.id}</Text>
-                <Text className="text-textSecondary text-[10px] uppercase font-bold tracking-widest">
-                  {activeTransaction.type === 'withdraw' 
-                    ? (activeTransaction.status === 'merchant_paid' ? '🔥 PAID - CONFIRM NOW' : '⏳ WAITING FOR MERCHANT')
-                    : '⏳ WAITING FOR APPROVAL'}
-                </Text>
-              </View>
-              <View className="bg-orange/20 px-3 py-1 rounded-full flex-row items-center">
-                <Text className="text-orange font-bold text-xs mr-2">View</Text>
+            </View>
+            
+            {ongoingUserTransactions.map((tx, idx) => (
+              <Animated.View 
+                key={tx.id}
+                entering={FadeInUp.delay(idx * 100)} 
+                className="mb-3"
+              >
                 <TouchableOpacity 
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    setIsBannerDismissed(true);
-                    // ARCHIVE LOCALLY & REMOTELY
-                    if (activeTransaction?.id) {
-                      updateDoc(doc(db, 'ongoing_transactions', activeTransaction.id), { status: 'archived' }).catch(() => {});
-                      useWalletStore.setState({ activeTransaction: null });
-                    }
-                  }}
-                  className="bg-orange/30 p-1 rounded-full"
+                  onPress={() => navigation.navigate('TransactionStatus', { transactionId: tx.id })}
+                  className="bg-orange/10 p-5 rounded-[28px] border border-orange/20 flex-row items-center"
                 >
-                  <XCircle color="#df7c27" size={14} />
+                  <View className="w-12 h-12 rounded-2xl bg-orange/20 items-center justify-center mr-4">
+                    <RefreshCcw color="#df7c27" size={24} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-orange font-bold text-base">{tx.type === 'withdraw' ? 'Withdrawal' : 'Deposit'}</Text>
+                    <Text className="text-textSecondary text-[8px] font-mono mb-1">ID: {tx.id}</Text>
+                    <Text className="text-textSecondary text-[10px] uppercase font-bold tracking-widest">
+                      {tx.type === 'withdraw' 
+                        ? (tx.status === 'merchant_paid' ? '🔥 PAID - CONFIRM NOW' : '⏳ WAITING FOR MERCHANT')
+                        : (tx.status === 'awaiting_confirmation' ? '⏳ WAITING FOR APPROVAL' : '⏳ PROCESSING')}
+                    </Text>
+                  </View>
+                  <ChevronRight color="#df7c27" size={20} />
                 </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
+              </Animated.View>
+            ))}
+          </View>
         )}
 
         {/* Merchant Application Tracker */}

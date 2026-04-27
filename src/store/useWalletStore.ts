@@ -81,6 +81,7 @@ interface WalletState {
   userProfile: { name: string, email: string, aid: string, phone: string, country: string, sellingRate?: number, buyingRate?: number } | null;
   merchantStatus: 'none' | 'pending' | 'approved' | 'declined';
   activeTransaction: any | null;
+  ongoingUserTransactions: any[];
   pendingRequests: any[];
   systemSettings: {
     exchangeRates: { [key: string]: number };
@@ -620,9 +621,15 @@ export const useWalletStore = create<WalletState>((set, get) => ({
             const txs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
             txs.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             
-            set({ activeTransaction: txs[0] });
+            set({ 
+              activeTransaction: txs[0],
+              ongoingUserTransactions: txs 
+            });
           } else {
-            set({ activeTransaction: null });
+            set({ 
+              activeTransaction: null,
+              ongoingUserTransactions: [] 
+            });
           }
         });
         
@@ -728,6 +735,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           userProfile: null, 
           balance: 0, 
           activeTransaction: null,
+          ongoingUserTransactions: [],
           merchantInventory: 0, 
           merchantEarnings: 0,
           merchantStatus: 'none',
