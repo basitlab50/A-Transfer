@@ -17,7 +17,8 @@ import {
   AlertCircle,
   RefreshCcw,
   CreditCard,
-  History
+  History,
+  Landmark
 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useWalletStore } from '../../store/useWalletStore';
@@ -29,14 +30,17 @@ const MerchantDashboard = ({ navigation }: any) => {
   const { 
     merchantInventory,
     merchantEarnings, 
-    isOnline, 
-    toggleOnlineStatus, 
+    isAcceptingBuy,
+    isAcceptingSell,
+    toggleBuyStatus,
+    toggleSellStatus,
     toggleMerchantMode,
     userCountry,
     availableCountries,
     systemSettings,
     userProfile,
-    updateMerchantRate
+    updateMerchantRate,
+    updateMerchantBuyRate
   } = useWalletStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mRate, setMRate] = useState(userProfile?.sellingRate?.toString() || '1.5');
