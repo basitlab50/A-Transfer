@@ -210,31 +210,50 @@ const WithdrawAmount = ({ route, navigation }: any) => {
             </View>
 
             <TouchableOpacity 
+              disabled={loading}
               onPress={async () => {
                 if (payoutType === 'momo' && !momoProvider) return Alert.alert('Error', 'Select a network provider');
                 setLoading(true);
                 try {
                   const txId = 'WD' + Date.now();
                   const payoutDetails = payoutType === 'bank' ? { type: 'bank', bankName, accountNo, accountName } : { type: 'momo', momoProvider, momoNumber, momoName: momoName || userProfile?.name || 'User' };
-                  const transaction = { 
-                    userId: auth.currentUser?.uid || 'anonymous', 
-                    userName: userProfile?.name || 'User', 
-                    merchantId: merchant.id, 
-                    amount: Number(creditsToSell), 
-                    localAmount: localPayout, 
-                    currencyCode, 
-                    status: 'awaiting_merchant_payment', 
-                    timestamp: new Date().toISOString(), 
-                    type: 'withdraw', 
-                    senderCountry: 'A-Wallet',
-                    destinationCountry: merchant.country,
-                    senderCurrency: 'A-Credit',
-                    recipientCurrency: currencyCode,
-                    payoutDetails 
-                  };
-                  await setDoc(doc(db, 'ongoing_transactions', txId), transaction);
+                  const amt = Number(creditsToSell);
+
+                  await runTransaction(db, async (transaction) => {
+                    const uRef = doc(db, 'users', auth.currentUser!.uid);
+                    const uSnap = await transaction.get(uRef);
+                    if (!uSnap.exists()) throw new Error('User not found');
+                    const currentBalance = uSnap.data().balance || 0;
+                    if (currentBalance < amt) throw new Error('Insufficient balance');
+
+                    const txData = { 
+                      userId: auth.currentUser?.uid || 'anonymous', 
+                      userName: userProfile?.name || 'User', 
+                      merchantId: merchant.id, 
+                      amount: amt, 
+                      localAmount: localPayout, 
+                      currencyCode, 
+                      status: 'awaiting_merchant_payment', 
+                      timestamp: new Date().toISOString(), 
+                      type: 'withdraw', 
+                      senderCountry: 'A-Wallet',
+                      destinationCountry: merchant.country,
+                      senderCurrency: 'A-Credit',
+                      recipientCurrency: currencyCode,
+                      payoutDetails,
+                      inEscrow: true 
+                    };
+
+                    transaction.update(uRef, { balance: increment(-amt) });
+                    transaction.set(doc(db, 'ongoing_transactions', txId), txData);
+                  });
+
                   setStep('success');
-                } catch (e: any) { Alert.alert('Error', e.message); } finally { setLoading(false); }
+                } catch (e: any) { 
+                  Alert.alert('WITHDRAWAL ERROR', e.message); 
+                } finally { 
+                  setLoading(false); 
+                }
               }}
               style={{ backgroundColor: loading ? '#334155' : '#df7c27', paddingVertical: 20, borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}
             >

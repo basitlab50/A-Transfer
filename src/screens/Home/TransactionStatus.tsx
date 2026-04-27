@@ -134,12 +134,13 @@ const TransactionStatus = ({ route, navigation }: any) => {
       await runTransaction(db, async (t) => {
         const tRef = doc(db, 'ongoing_transactions', tx.id);
         const mRef = doc(db, 'users', tx.merchantId);
-        const uRef = doc(db, 'users', tx.userId);
         const snap = await t.get(tRef);
         if (snap.data().status === 'completed') throw new Error('Already completed');
-        t.update(uRef, { balance: increment(-tx.amount) });
+        
+        // Note: Balance was already deducted from user at initiation (Escrow)
+        // Now we just credit the merchant
         t.update(mRef, { merchantInventory: increment(tx.amount) });
-        t.update(tRef, { status: 'completed', completedAt: new Date().toISOString() });
+        t.update(tRef, { status: 'completed', completedAt: new Date().toISOString(), inEscrow: false });
       });
     } catch (e: any) { 
       Alert.alert('Error', e.message); 
@@ -292,7 +293,14 @@ const TransactionStatus = ({ route, navigation }: any) => {
                 setShowCancelModal(false);
                 try {
                   if (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') {
-                    await updateDoc(doc(db, 'ongoing_transactions', tx.id), { status: 'cancelled', cancelledAt: new Date().toISOString() });
+                    await runTransaction(db, async (transaction) => {
+                      const tRef = doc(db, 'ongoing_transactions', tx.id);
+                      const uRef = doc(db, 'users', tx.userId);
+                      if (tx.type === 'withdraw' && tx.inEscrow) {
+                        transaction.update(uRef, { balance: increment(tx.amount) });
+                      }
+                      transaction.update(tRef, { status: 'cancelled', cancelledAt: new Date().toISOString(), inEscrow: false });
+                    });
                     handleFinish();
                   } else {
                     await requestCancellation(tx.id);

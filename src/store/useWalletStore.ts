@@ -285,16 +285,24 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   },
   handleCancellationResponse: async (txId, approved) => {
     try {
-      const txRef = doc(db, 'ongoing_transactions', txId);
-      const snap = await getDoc(txRef);
-      if (!snap.exists()) return;
-      
-      if (approved) {
-        await updateDoc(txRef, { status: 'cancelled', cancelledAt: new Date().toISOString() });
-      } else {
-        const revertStatus = snap.data().preCancellationStatus || 'awaiting_confirmation';
-        await updateDoc(txRef, { status: revertStatus, cancellationDeniedAt: new Date().toISOString() });
-      }
+      await runTransaction(db, async (transaction) => {
+        const txRef = doc(db, 'ongoing_transactions', txId);
+        const txSnap = await transaction.get(txRef);
+        if (!txSnap.exists()) return;
+        const txData = txSnap.data();
+
+        if (approved) {
+          // If it was a withdrawal in escrow, return funds to user
+          if (txData.type === 'withdraw' && txData.inEscrow) {
+            const uRef = doc(db, 'users', txData.userId);
+            transaction.update(uRef, { balance: increment(txData.amount) });
+          }
+          transaction.update(txRef, { status: 'cancelled', cancelledAt: new Date().toISOString(), inEscrow: false });
+        } else {
+          const revertStatus = txData.preCancellationStatus || 'awaiting_confirmation';
+          transaction.update(txRef, { status: revertStatus, cancellationDeniedAt: new Date().toISOString() });
+        }
+      });
     } catch (error) {
       console.error('Error handling cancellation response:', error);
       throw error;
