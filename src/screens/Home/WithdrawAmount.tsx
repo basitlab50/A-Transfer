@@ -49,6 +49,11 @@ const WithdrawAmount = ({ route, navigation }: any) => {
     ? (parseFloat(inputValue) || 0)
     : (parseFloat(inputValue) || 0) * (effectiveRate || 1);
 
+  const buyingMin = merchant?.buyingMin || 10;
+  const buyingMax = merchant?.buyingMax || 1000;
+  const isOutOfRange = creditsToSell > 0 && (creditsToSell < buyingMin || creditsToSell > buyingMax);
+  const isInsufficient = creditsToSell > balance;
+
   const [showNetworkPicker, setShowNetworkPicker] = useState(false);
   const availableNetworks = country?.momoNetworks || ['Other'];
 
@@ -116,16 +121,39 @@ const WithdrawAmount = ({ route, navigation }: any) => {
               </Text>
             </View>
 
+            <View style={{ marginBottom: 20 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+                <Text style={{ color: '#94A3B8', fontSize: 12 }}>Merchant Limits:</Text>
+                <Text style={{ color: '#F8FAFC', fontSize: 12, fontWeight: 'bold' }}>{buyingMin} - {buyingMax} A</Text>
+              </View>
+              {isOutOfRange && (
+                <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: 'bold', marginTop: 5, textAlign: 'center', textTransform: 'uppercase' }}>
+                  Amount must be between {buyingMin} and {buyingMax} A-Credits
+                </Text>
+              )}
+              {isInsufficient && (
+                <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: 'bold', marginTop: 5, textAlign: 'center', textTransform: 'uppercase' }}>
+                  Insufficient Balance
+                </Text>
+              )}
+            </View>
+
             <TouchableOpacity 
-              onPress={() => {
-                if (!inputValue || parseFloat(inputValue) <= 0) return Alert.alert('Error', 'Enter amount');
-                if (creditsToSell > balance) return Alert.alert('Error', 'Insufficient Balance');
-                setStep('details');
+              disabled={!inputValue || parseFloat(inputValue) === 0 || isOutOfRange || isInsufficient}
+              onPress={() => setStep('details')}
+              style={{ 
+                backgroundColor: (!inputValue || isOutOfRange || isInsufficient) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(118, 179, 58, 0.2)', 
+                paddingVertical: 20, 
+                borderRadius: 24, 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                flexDirection: 'row', 
+                borderWidth: 1, 
+                borderColor: (!inputValue || isOutOfRange || isInsufficient) ? '#334155' : 'rgba(118, 179, 58, 0.4)' 
               }}
-              style={{ backgroundColor: 'rgba(118, 179, 58, 0.2)', paddingVertical: 20, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', borderWidth: 1, borderColor: 'rgba(118, 179, 58, 0.4)' }}
             >
-              <Text style={{ color: '#76b33a', fontWeight: 'bold', fontSize: 18, marginRight: 10 }}>Continue to Payout Details</Text>
-              <ArrowRight color="#76b33a" size={20} />
+              <Text style={{ color: (!inputValue || isOutOfRange || isInsufficient) ? '#475569' : '#76b33a', fontWeight: 'bold', fontSize: 18, marginRight: 10 }}>Continue to Payout Details</Text>
+              <ArrowRight color={(!inputValue || isOutOfRange || isInsufficient) ? '#475569' : '#76b33a'} size={20} />
             </TouchableOpacity>
           </View>
         ) : (

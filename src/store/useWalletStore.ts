@@ -108,7 +108,8 @@ interface WalletState {
   applyForMerchant: (data: { businessName: string, ownerName: string, phone: string, email: string }) => Promise<void>;
   // Admin Actions
   fetchAllUsers: () => Promise<any[]>;
-  updateUserStatus: (uid: string, updates: any) => Promise<void>;
+  updateMerchantBuyLimits: (min: number, max: number) => Promise<void>;
+  updateUserStatus: (uid: string, updates: Partial<Merchant>) => Promise<void>;
   allocateCredits: (uid: string, amount: number, type: 'balance' | 'inventory') => Promise<void>;
   updateGlobalSettings: (updates: any) => Promise<void>;
   fetchUserTransactions: (uid: string) => Promise<any[]>;
@@ -443,6 +444,24 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Error updating merchant buy rate:', error);
+      throw error;
+    }
+  },
+
+  updateMerchantBuyLimits: async (min: number, max: number) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      const docRef = doc(db, 'users', user.uid);
+      await updateDoc(docRef, { 
+        buyingMin: min,
+        buyingMax: max 
+      });
+      set(state => ({
+        userProfile: state.userProfile ? { ...state.userProfile, buyingMin: min, buyingMax: max } : null
+      }));
+    } catch (error) {
+      console.error('Error updating buy limits:', error);
       throw error;
     }
   },

@@ -103,6 +103,11 @@ const AMerchants = ({ route, navigation }: Props) => {
               <View className="bg-surface px-3 py-1 rounded-full border border-slate-800">
                 <Text className="text-textSecondary text-[10px] font-bold">VERIFIED</Text>
               </View>
+              {mode === 'withdraw' && (
+                <View className="mt-2 bg-orange/5 px-2 py-1 rounded-md border border-orange/10">
+                  <Text className="text-orange text-[8px] font-bold">LIMIT: {item.buyingMin || 10} - {item.buyingMax || 1000} A</Text>
+                </View>
+              )}
             </View>
           </View>
 
