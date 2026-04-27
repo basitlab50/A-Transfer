@@ -278,7 +278,7 @@ const TransactionStatus = ({ route, navigation }: any) => {
         )}
 
         {/* Withdrawal Cancellation Button (Only for withdrawals) */}
-        {tx.type === 'withdraw' && tx.status !== 'completed' && tx.status !== 'cancelled' && tx.status !== 'cancellation_requested' && (
+        {(tx.type?.toLowerCase() === 'withdraw' || tx.type?.toLowerCase() === 'withdrawal') && tx.status !== 'completed' && tx.status !== 'cancelled' && (
           <View style={{ marginHorizontal: 25, marginBottom: 30 }}>
             <TouchableOpacity 
               onPress={() => {
@@ -292,18 +292,23 @@ const TransactionStatus = ({ route, navigation }: any) => {
                       onPress: async () => {
                         try {
                           if (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') {
-                            await updateDoc(doc(db, 'ongoing_transactions', tx.id), { status: 'cancelled', cancelledAt: new Date().toISOString() });
+                            await updateDoc(doc(db, 'ongoing_transactions', transactionId), { 
+                              status: 'cancelled', 
+                              cancelledAt: new Date().toISOString() 
+                            });
                             handleFinish();
                           } else {
-                            await requestCancellation(tx.id);
+                            await requestCancellation(transactionId);
                           }
-                        } catch (e: any) { Alert.alert("Error", e.message); }
+                        } catch (e: any) {
+                          Alert.alert("Error", e.message);
+                        }
                       }
                     }
                   ]
                 );
               }}
-              style={{ backgroundColor: '#ef4444', padding: 20, borderRadius: 24, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+              style={{ backgroundColor: '#ef4444', padding: 22, borderRadius: 24, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
             >
               <XCircle color="#fff" size={20} />
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, marginLeft: 10 }}>REQUEST FOR CANCELLATION</Text>
