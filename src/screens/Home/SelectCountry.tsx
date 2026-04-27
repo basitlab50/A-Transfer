@@ -21,7 +21,7 @@ const SelectCountry = ({ route, navigation }: Props) => {
       setUserCountry(countryName);
       navigation.goBack();
     } else {
-      navigation.navigate('AMerchants', { country: countryName });
+      navigation.navigate('AMerchants', { country: countryName, mode });
     }
   };
 
@@ -47,7 +47,9 @@ const SelectCountry = ({ route, navigation }: Props) => {
             ? 'Choose a destination country to initiate a regional transfer pulse.'
             : mode === 'profile'
             ? 'Select your primary country to update your local currency and regional settings.'
-            : 'Choose a destination country to view available A-Merchants for withdrawal.'
+            : mode === 'deposit'
+            ? 'Choose the country where you want to buy A-Credits from a local merchant.'
+            : 'Choose the country where you want to receive your local currency payout.'
           }
         </Text>
         

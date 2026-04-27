@@ -236,7 +236,7 @@ const Dashboard = ({ navigation }: Props) => {
               title="Deposit" 
               variant="accent" 
               className="flex-1 mr-2 border-accent/20"
-              onPress={() => navigation.navigate('AMerchants', { country: userCountry, mode: 'deposit' })}
+              onPress={() => navigation.navigate('SelectCountry', { mode: 'deposit' })}
               icon={<ArrowUpRight color="#76b33a" size={18} />} 
               size="medium"
             />
@@ -244,7 +244,7 @@ const Dashboard = ({ navigation }: Props) => {
               title="Withdraw" 
               variant="orange" 
               className="flex-1 ml-2 border-orange/20"
-              onPress={() => navigation.navigate('AMerchants', { country: userCountry, mode: 'withdraw' })}
+              onPress={() => navigation.navigate('SelectCountry', { mode: 'withdraw' })}
               icon={<ArrowDownLeft color="#df7c27" size={18} />} 
               size="medium"
             />
