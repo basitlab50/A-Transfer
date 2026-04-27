@@ -336,6 +336,19 @@ const TransactionStatus = ({ route, navigation }: any) => {
               {tx.status === 'cancellation_requested' ? 'CANCELLATION PENDING' : (tx.isChained ? (tx.status === 'awaiting_confirmation' ? 'PHASE 1: LOCAL DEPOSIT' : 'PHASE 2: INT\'L PAYOUT') : 'QUICK TRANSFER ACTIVE')}
            </Text>
         </View>
+        
+        {/* ESCROW INFO BLOCK */}
+        {tx.type === 'withdraw' && tx.inEscrow && (
+          <View style={{ marginHorizontal: 25, backgroundColor: 'rgba(118, 179, 58, 0.05)', padding: 25, borderRadius: 32, borderWidth: 1, borderStyle: 'dashed', borderColor: '#76b33a44', marginBottom: 30, alignItems: 'center' }}>
+            <View style={{ backgroundColor: 'rgba(118, 179, 58, 0.1)', padding: 12, borderRadius: 20, marginBottom: 12 }}>
+              <Wallet color="#76b33a" size={20} />
+            </View>
+            <Text style={{ color: '#76b33a', fontSize: 20, fontWeight: 'bold' }}>A {tx.amount} In Escrow</Text>
+            <Text style={{ color: '#94A3B8', textAlign: 'center', fontSize: 13, marginTop: 8, lineHeight: 18 }}>
+              This amount has been deducted from your balance. It is currently locked and inaccessible to both you and the merchant.
+            </Text>
+          </View>
+        )}
 
         {/* Cancellation Alert */}
         {tx.status === 'cancellation_requested' && (

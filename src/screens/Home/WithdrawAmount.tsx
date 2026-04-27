@@ -64,9 +64,9 @@ const WithdrawAmount = ({ route, navigation }: any) => {
           <View style={{ backgroundColor: 'rgba(118, 179, 58, 0.1)', padding: 40, borderRadius: 60, marginBottom: 30 }}>
             <CheckCircle2 color="#76b33a" size={80} />
           </View>
-          <Text style={{ color: '#F8FAFC', fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 15 }}>Request Sent</Text>
+          <Text style={{ color: '#F8FAFC', fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 15 }}>A-Credits Escrowed</Text>
           <Text style={{ color: '#94A3B8', textAlign: 'center', marginBottom: 40, lineHeight: 22 }}>
-            Your withdrawal request has been sent. The merchant will now send funds to your provided details.
+            Your A-Credits have been deducted and placed in secure escrow. They are currently inaccessible to both you and the merchant until you confirm receipt of your local currency.
           </Text>
           <TouchableOpacity 
             onPress={() => navigation.navigate('Dashboard')}
