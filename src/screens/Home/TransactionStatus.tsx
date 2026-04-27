@@ -252,7 +252,31 @@ const TransactionStatus = ({ route, navigation }: any) => {
         <View style={{ width: 20 }} />
       </View>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* FORCE CANCELLATION BUTTON FOR TESTING */}
+        <View style={{ margin: 25, zIndex: 9999 }}>
+          <TouchableOpacity 
+            onPress={() => {
+              Alert.alert(
+                "Confirm Cancellation?",
+                "This will request the merchant to cancel the order.",
+                [
+                  { text: "No", style: "cancel" },
+                  { text: "YES, REQUEST CANCEL", onPress: async () => {
+                    try {
+                      await requestCancellation(transactionId);
+                      Alert.alert("SENT", "Request has been sent.");
+                    } catch (e: any) { Alert.alert("Error", e.message); }
+                  }}
+                ]
+              );
+            }}
+            style={{ backgroundColor: '#ef4444', padding: 25, borderRadius: 20, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: '#991b1b' }}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>FORCE REQUEST CANCEL</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Progress Header */}
         <View style={{ marginHorizontal: 25, backgroundColor: '#1E293B', padding: 30, borderRadius: 40, alignItems: 'center', marginBottom: 30 }}>
            <View style={{ backgroundColor: '#0A192F', padding: 15, borderRadius: 20, marginBottom: 15 }}>
