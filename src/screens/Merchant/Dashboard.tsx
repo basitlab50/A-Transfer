@@ -43,6 +43,8 @@ const MerchantDashboard = ({ navigation }: any) => {
   const [bRate, setBRate] = useState(userProfile?.buyingRate?.toString() || '0.9');
   const [isUpdatingRate, setIsUpdatingRate] = useState(false);
   const [isUpdatingBuyRate, setIsUpdatingBuyRate] = useState(false);
+  const [showSellSuccess, setShowSellSuccess] = useState(false);
+  const [showBuySuccess, setShowBuySuccess] = useState(false);
 
   const sellRateNum = parseFloat(mRate);
   const isSellRateValid = mRate === '' || (!isNaN(sellRateNum) && sellRateNum >= systemSettings.merchantSellRange.min && sellRateNum <= systemSettings.merchantSellRange.max);
@@ -174,8 +176,11 @@ const MerchantDashboard = ({ navigation }: any) => {
               <Text className="text-textPrimary font-bold">Market Sell Rate</Text>
               <Text className="text-textSecondary text-xs">Users buy from you at this rate</Text>
             </View>
-            <View className="bg-accent/10 px-3 py-1 rounded-full">
-              <Text className="text-accent text-[10px] font-bold">RANGE: ${systemSettings.merchantSellRange.min} - ${systemSettings.merchantSellRange.max}</Text>
+            <View className="items-end">
+              <View className="bg-accent/10 px-3 py-1 rounded-full">
+                <Text className="text-accent text-[10px] font-bold">RANGE: ${systemSettings.merchantSellRange.min} - ${systemSettings.merchantSellRange.max}</Text>
+              </View>
+              {showSellSuccess && <Text className="text-accent text-[8px] font-bold mt-1">SET SUCCESSFULLY! ✨</Text>}
             </View>
           </View>
           
@@ -200,6 +205,8 @@ const MerchantDashboard = ({ navigation }: any) => {
                 setIsUpdatingRate(true);
                 try {
                   await updateMerchantRate(rate);
+                  setShowSellSuccess(true);
+                  setTimeout(() => setShowSellSuccess(false), 3000);
                   Alert.alert('Success ✨', 'Market Selling Rate has been set successfully!');
                 } catch (e: any) {
                   Alert.alert('Error', e.message || 'Failed to update rate');
@@ -225,8 +232,11 @@ const MerchantDashboard = ({ navigation }: any) => {
               <Text className="text-textPrimary font-bold">Market Buy Rate</Text>
               <Text className="text-textSecondary text-xs">Users sell to you at this rate</Text>
             </View>
-            <View className="bg-orange/10 px-3 py-1 rounded-full">
-              <Text className="text-orange text-[10px] font-bold">RANGE: ${systemSettings.merchantBuyRange.min} - ${systemSettings.merchantBuyRange.max}</Text>
+            <View className="items-end">
+              <View className="bg-orange/10 px-3 py-1 rounded-full">
+                <Text className="text-orange text-[10px] font-bold">RANGE: ${systemSettings.merchantBuyRange.min} - ${systemSettings.merchantBuyRange.max}</Text>
+              </View>
+              {showBuySuccess && <Text className="text-orange text-[8px] font-bold mt-1">SET SUCCESSFULLY! ✨</Text>}
             </View>
           </View>
           
@@ -251,6 +261,8 @@ const MerchantDashboard = ({ navigation }: any) => {
                 setIsUpdatingBuyRate(true);
                 try {
                   await updateMerchantBuyRate(rate);
+                  setShowBuySuccess(true);
+                  setTimeout(() => setShowBuySuccess(false), 3000);
                   Alert.alert('Success ✨', 'Market Buying Rate has been set successfully!');
                 } catch (e: any) {
                   Alert.alert('Error', e.message || 'Failed to update rate');
@@ -259,9 +271,9 @@ const MerchantDashboard = ({ navigation }: any) => {
                 }
               }}
               disabled={isUpdatingBuyRate || !isBuyRateValid || bRate === ''}
-              className={`${(isUpdatingBuyRate || !isBuyRateValid || bRate === '') ? 'bg-slate-800 opacity-50' : 'bg-orange'} px-6 py-4 rounded-2xl`}
+              className={`${(isUpdatingBuyRate || !isBuyRateValid || bRate === '') ? 'bg-slate-800 opacity-50' : 'bg-accent'} px-6 py-4 rounded-2xl`}
             >
-              <Text className={`${(isUpdatingBuyRate || !isBuyRateValid || bRate === '') ? 'text-textSecondary' : 'text-white'} font-bold`}>{isUpdatingBuyRate ? '...' : 'Set'}</Text>
+              <Text className={`${(isUpdatingBuyRate || !isBuyRateValid || bRate === '') ? 'text-textSecondary' : 'text-primary'} font-bold`}>{isUpdatingBuyRate ? '...' : 'Set'}</Text>
             </TouchableOpacity>
           </View>
           {!isBuyRateValid && (
