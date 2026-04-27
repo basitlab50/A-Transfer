@@ -106,6 +106,8 @@ interface WalletState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string, phone: string, country: string) => Promise<void>;
   signOut: () => Promise<void>;
+  requestCancellation: (txId: string) => Promise<void>;
+  handleCancellationResponse: (txId: string, approved: boolean) => Promise<void>;
   createRequest: (recipientAid: string, amount: number) => void;
   initializeAuth: () => void;
   applyForMerchant: (data: { businessName: string, ownerName: string, phone: string, email: string }) => Promise<void>;
@@ -262,6 +264,40 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       await firebaseSignOut(auth);
     } catch (error: any) {
       console.error('Sign Out Error:', error.message);
+    }
+  },
+  requestCancellation: async (txId) => {
+    try {
+      const txRef = doc(db, 'ongoing_transactions', txId);
+      const snap = await getDoc(txRef);
+      if (snap.exists()) {
+        const oldStatus = snap.data().status;
+        await updateDoc(txRef, { 
+          status: 'cancellation_requested', 
+          preCancellationStatus: oldStatus,
+          cancellationRequestedAt: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('Error requesting cancellation:', error);
+      throw error;
+    }
+  },
+  handleCancellationResponse: async (txId, approved) => {
+    try {
+      const txRef = doc(db, 'ongoing_transactions', txId);
+      const snap = await getDoc(txRef);
+      if (!snap.exists()) return;
+      
+      if (approved) {
+        await updateDoc(txRef, { status: 'cancelled', cancelledAt: new Date().toISOString() });
+      } else {
+        const revertStatus = snap.data().preCancellationStatus || 'awaiting_confirmation';
+        await updateDoc(txRef, { status: revertStatus, cancellationDeniedAt: new Date().toISOString() });
+      }
+    } catch (error) {
+      console.error('Error handling cancellation response:', error);
+      throw error;
     }
   },
   createRequest: (recipientAid, amount) => set((state) => ({ 

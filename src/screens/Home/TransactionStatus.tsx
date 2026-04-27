@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, SafeAreaView, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { db, auth } from '../../config/firebase';
 import { doc, onSnapshot, runTransaction, increment, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { CheckCircle2, Clock, ArrowLeft, Wallet, XCircle, Info, RefreshCw, Home, ArrowUpCircle, ArrowDownCircle, PlaneTakeoff, Landmark, Smartphone } from 'lucide-react-native';
+import { CheckCircle2, Clock, ArrowLeft, Wallet, XCircle, Info, RefreshCw, Home, ArrowUpCircle, ArrowDownCircle, PlaneTakeoff, Landmark, Smartphone, AlertCircle } from 'lucide-react-native';
 import { CommonActions } from '@react-navigation/native';
+import { useWalletStore } from '../../store/useWalletStore';
 
 const TransactionStatus = ({ route, navigation }: any) => {
   const { transactionId } = route.params || {};
@@ -11,6 +12,7 @@ const TransactionStatus = ({ route, navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [bridging, setBridging] = useState(false);
+  const { requestCancellation } = useWalletStore();
 
   const fetchTx = async () => {
     if (!transactionId) return;
@@ -144,11 +146,47 @@ const TransactionStatus = ({ route, navigation }: any) => {
     }
   };
 
+  const handleCancelOrder = () => {
+    if (!tx) return;
+    
+    Alert.alert(
+      "Cancel Order?",
+      "Are you sure you want to cancel this transfer?",
+      [
+        { text: "No", style: "cancel" },
+        { 
+          text: "Yes, Cancel", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // If merchant is assigned (and not SYSTEM_AUTO_ASSIGN), request permission
+              if (tx.merchantId && tx.merchantId !== 'SYSTEM_AUTO_ASSIGN') {
+                await requestCancellation(tx.id);
+                Alert.alert("Request Sent", "A cancellation request has been sent to the merchant for approval.");
+              } else {
+                // Immediate cancellation for unassigned orders
+                await updateDoc(doc(db, 'ongoing_transactions', tx.id), { status: 'cancelled', cancelledAt: new Date().toISOString() });
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Dashboard' }],
+                  })
+                );
+              }
+            } catch (e: any) {
+              Alert.alert("Error", "Failed to cancel order: " + e.message);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleFinish = () => {
-    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Dashboard' }] }));
-    if (tx?.id) {
+    if (tx) {
       updateDoc(doc(db, 'ongoing_transactions', tx.id), { status: 'archived' }).catch(() => {});
     }
+    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Dashboard' }] }));
   };
 
   if (loading || bridging) return (
@@ -201,7 +239,13 @@ const TransactionStatus = ({ route, navigation }: any) => {
       <View style={{ paddingHorizontal: 25, paddingVertical: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <TouchableOpacity onPress={() => navigation.goBack()}><ArrowLeft color="#fff" size={20} /></TouchableOpacity>
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Transfer Status</Text>
-        <TouchableOpacity onPress={handleFinish}><XCircle color="#ef4444" size={20} /></TouchableOpacity>
+        <TouchableOpacity 
+          onPress={handleCancelOrder}
+          className="bg-red-500/10 px-3 py-1.5 rounded-full flex-row items-center border border-red-500/20"
+        >
+          <XCircle color="#ef4444" size={14} />
+          <Text className="text-red-500 text-[10px] font-bold ml-1 uppercase">Cancel Order</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
@@ -212,9 +256,22 @@ const TransactionStatus = ({ route, navigation }: any) => {
            </View>
            <Text style={{ color: '#fff', fontSize: 36, fontWeight: 'bold' }}>A {tx.amount}</Text>
            <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 5, fontWeight: 'bold' }}>
-              {tx.isChained ? (tx.status === 'awaiting_confirmation' ? 'PHASE 1: LOCAL DEPOSIT' : 'PHASE 2: INT\'L PAYOUT') : 'QUICK TRANSFER ACTIVE'}
+              {tx.status === 'cancellation_requested' ? 'CANCELLATION PENDING' : (tx.isChained ? (tx.status === 'awaiting_confirmation' ? 'PHASE 1: LOCAL DEPOSIT' : 'PHASE 2: INT\'L PAYOUT') : 'QUICK TRANSFER ACTIVE')}
            </Text>
         </View>
+
+        {/* Cancellation Alert */}
+        {tx.status === 'cancellation_requested' && (
+          <View style={{ marginHorizontal: 25, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 25, borderRadius: 32, borderWidth: 1, borderColor: '#ef444433', marginBottom: 30 }}>
+            <View className="flex-row items-center mb-2">
+              <AlertCircle color="#ef4444" size={18} />
+              <Text style={{ color: '#ef4444', fontSize: 16, fontWeight: 'bold', marginLeft: 8 }}>Cancellation Requested</Text>
+            </View>
+            <Text style={{ color: '#94A3B8', lineHeight: 20 }}>
+              You have requested to cancel this order. We are waiting for the merchant to approve the cancellation to ensure no funds are lost.
+            </Text>
+          </View>
+        )}
 
         {/* Action Required */}
         {tx.status === 'awaiting_confirmation' && (

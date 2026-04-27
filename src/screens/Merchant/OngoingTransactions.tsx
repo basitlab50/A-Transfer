@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, SafeAreaView, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { db, auth } from '../../config/firebase';
 import { collection, query, where, onSnapshot, doc, increment, updateDoc, runTransaction, setDoc } from 'firebase/firestore';
-import { CheckCircle2, XCircle, Clock, User, ArrowLeft, RefreshCcw, Landmark, Smartphone, ArrowDownCircle, ArrowUpCircle, Home, ShoppingBag } from 'lucide-react-native';
+import { CheckCircle2, XCircle, Clock, User, ArrowLeft, RefreshCcw, Landmark, Smartphone, ArrowDownCircle, ArrowUpCircle, Home, ShoppingBag, AlertCircle } from 'lucide-react-native';
+import { useWalletStore } from '../../store/useWalletStore';
 
 const MerchantOngoingTransactions = ({ navigation }: any) => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [lastTx, setLastTx] = useState<any>(null);
+  const { handleCancellationResponse } = useWalletStore();
   
   // Success Screen State
   const [showSuccess, setShowSuccess] = useState(false);
@@ -27,7 +29,7 @@ const MerchantOngoingTransactions = ({ navigation }: any) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const txs = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as any))
-        .filter(t => ['awaiting_confirmation', 'awaiting_merchant_payment'].includes(t.status));
+        .filter(t => ['awaiting_confirmation', 'awaiting_merchant_payment', 'cancellation_requested'].includes(t.status));
       setTransactions(txs);
       setLoading(false);
     }, (error) => {
@@ -137,50 +139,76 @@ const MerchantOngoingTransactions = ({ navigation }: any) => {
                 )}
               </View>
 
-              <TouchableOpacity 
-                disabled={processingId === item.id}
-                style={{ backgroundColor: isDeposit ? '#76b33a' : '#df7c27', padding: 20, borderRadius: 20, alignItems: 'center', shadowColor: isDeposit ? '#76b33a' : '#df7c27', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 8 }}
-                onPress={async () => {
-                  setProcessingId(item.id);
-                  try {
-                    const txRef = doc(db, 'ongoing_transactions', item.id);
-                    
-                    if (isDeposit) {
-                      await runTransaction(db, async (transaction) => {
-                        const mRef = doc(db, 'users', item.merchantId);
-                        const uRef = doc(db, 'users', item.userId);
-                        const mSnap = await transaction.get(mRef);
-                        const inv = Number(mSnap.data().merchantInventory || 0);
-                        const amt = Number(item.amount);
-                        if (inv < amt) throw new Error('Insufficient Inventory');
-                        transaction.update(mRef, { merchantInventory: increment(-amt) });
-                        transaction.update(uRef, { balance: increment(amt) });
-                        transaction.update(txRef, { status: 'completed', completedAt: new Date().toISOString() });
-                      });
-                      setLastTx({ ...item, status: 'completed' });
-                      setSuccessMessage('Credits Delivered!');
-                      setSuccessSubtext(`You have successfully transferred A ${item.amount} to ${item.userName}.`);
-                      setShowSuccess(true);
-                    } else {
-                      await setDoc(txRef, { status: 'merchant_paid', merchantPaidAt: new Date().toISOString() }, { merge: true });
-                      setLastTx({ ...item, status: 'merchant_paid' });
-                      setSuccessMessage('Payout Confirmed!');
-                      setSuccessSubtext(`We have notified ${item.userName} that you have paid. Waiting for their confirmation.`);
-                      setShowSuccess(true);
-                    }
-                  } catch (e: any) {
-                    Alert.alert('DATABASE ERROR', e.message);
-                  } finally {
-                    setProcessingId(null);
-                  }
-                }}
-              >
-                {processingId === item.id ? <ActivityIndicator color="#fff" /> : (
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
-                    {isDeposit ? 'CONFIRM RECEIVED' : 'I HAVE PAID USER'}
+              {item.status === 'cancellation_requested' ? (
+                <View className="bg-red-500/10 p-5 rounded-[24px] border border-red-500/20">
+                  <View className="flex-row items-center mb-3">
+                    <AlertCircle color="#EF4444" size={20} />
+                    <Text className="text-red-500 font-bold ml-2">User Requested Cancellation</Text>
+                  </View>
+                  <Text className="text-textSecondary text-xs mb-5">
+                    The user wants to cancel this order. If you haven't made payment yet, you should allow it. If you have already paid, you can deny the request.
                   </Text>
-                )}
-              </TouchableOpacity>
+                  <View className="flex-row">
+                    <TouchableOpacity 
+                      className="flex-1 bg-red-500 py-3 rounded-xl items-center mr-2"
+                      onPress={() => handleCancellationResponse(item.id, true)}
+                    >
+                      <Text className="text-white font-bold text-xs">Allow Cancellation</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      className="flex-1 bg-slate-700 py-3 rounded-xl items-center"
+                      onPress={() => handleCancellationResponse(item.id, false)}
+                    >
+                      <Text className="text-white font-bold text-xs">Do Not Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  disabled={processingId === item.id}
+                  style={{ backgroundColor: isDeposit ? '#76b33a' : '#df7c27', padding: 20, borderRadius: 20, alignItems: 'center', shadowColor: isDeposit ? '#76b33a' : '#df7c27', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 8 }}
+                  onPress={async () => {
+                    setProcessingId(item.id);
+                    try {
+                      const txRef = doc(db, 'ongoing_transactions', item.id);
+                      
+                      if (isDeposit) {
+                        await runTransaction(db, async (transaction) => {
+                          const mRef = doc(db, 'users', item.merchantId);
+                          const uRef = doc(db, 'users', item.userId);
+                          const mSnap = await transaction.get(mRef);
+                          const inv = Number(mSnap.data().merchantInventory || 0);
+                          const amt = Number(item.amount);
+                          if (inv < amt) throw new Error('Insufficient Inventory');
+                          transaction.update(mRef, { merchantInventory: increment(-amt) });
+                          transaction.update(uRef, { balance: increment(amt) });
+                          transaction.update(txRef, { status: 'completed', completedAt: new Date().toISOString() });
+                        });
+                        setLastTx({ ...item, status: 'completed' });
+                        setSuccessMessage('Credits Delivered!');
+                        setSuccessSubtext(`You have successfully transferred A ${item.amount} to ${item.userName}.`);
+                        setShowSuccess(true);
+                      } else {
+                        await setDoc(txRef, { status: 'merchant_paid', merchantPaidAt: new Date().toISOString() }, { merge: true });
+                        setLastTx({ ...item, status: 'merchant_paid' });
+                        setSuccessMessage('Payout Confirmed!');
+                        setSuccessSubtext(`We have notified ${item.userName} that you have paid. Waiting for their confirmation.`);
+                        setShowSuccess(true);
+                      }
+                    } catch (e: any) {
+                      Alert.alert('DATABASE ERROR', e.message);
+                    } finally {
+                      setProcessingId(null);
+                    }
+                  }}
+                >
+                  {processingId === item.id ? <ActivityIndicator color="#fff" /> : (
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
+                      {isDeposit ? 'CONFIRM RECEIVED' : 'I HAVE PAID USER'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           );
         })}
