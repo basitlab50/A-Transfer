@@ -42,7 +42,8 @@ const MerchantDashboard = ({ navigation }: any) => {
     updateMerchantRate,
     updateMerchantBuyRate,
     updateMerchantBuyLimits,
-    updateMerchantSellMin
+    updateMerchantSellMin,
+    balance
   } = useWalletStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mRate, setMRate] = useState(userProfile?.sellingRate?.toString() || '1.5');
@@ -66,12 +67,19 @@ const MerchantDashboard = ({ navigation }: any) => {
   const isBuyRateValid = bRate === '' || (!isNaN(buyRateNum) && buyRateNum >= systemSettings.merchantBuyRange.min && buyRateNum <= systemSettings.merchantBuyRange.max);
 
   const currentCountry = availableCountries.find(c => c.name === userCountry);
-  const rate = currentCountry?.rate || 1;
+  const baseRate = currentCountry?.rate || 1;
   const currencySymbol = currentCountry?.currencySymbol || '$';
   const currencyCode = currentCountry?.currencyCode || 'USD';
 
-  const localInventory = merchantInventory * rate;
-  const localEarnings = merchantEarnings * rate;
+  const merchantSellRate = userProfile?.sellingRate || 1.5;
+  const merchantBuyRate = userProfile?.buyingRate || 0.9;
+  
+  const effectiveSellRate = merchantSellRate * baseRate;
+  const effectiveBuyRate = merchantBuyRate * baseRate;
+
+  const localInventory = merchantInventory * effectiveSellRate;
+  const localEarnings = merchantEarnings * effectiveSellRate;
+  const localBalance = balance * effectiveSellRate;
 
   // Mock peer requests
   const peerRequests = [
@@ -99,6 +107,9 @@ const MerchantDashboard = ({ navigation }: any) => {
               </Text>
             </View>
             <Text className="text-textPrimary text-xl font-bold">Merchant Hub</Text>
+            <Text className="text-textSecondary text-[10px] font-bold mt-1">
+              BALANCE: <Text className="text-accent">{currencySymbol}{localBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currencyCode}</Text>
+            </Text>
           </View>
 
           <View className="flex-row items-center">
@@ -232,7 +243,10 @@ const MerchantDashboard = ({ navigation }: any) => {
                   <CheckCircle2 color="#0A192F" size={20} />
                 </TouchableOpacity>
               </View>
-              <Text className="text-textSecondary text-[10px] italic">Max order is automatically capped by your Liquidity Inventory.</Text>
+              <Text className="text-textSecondary text-[10px] italic">
+                Min: {currencySymbol}{(parseFloat(minSellLimit) * effectiveSellRate).toLocaleString()} • 
+                Max: {currencySymbol}{(merchantInventory * effectiveSellRate).toLocaleString()} {currencyCode}
+              </Text>
             </Animated.View>
           )}
 
@@ -311,7 +325,10 @@ const MerchantDashboard = ({ navigation }: any) => {
                   <CheckCircle2 color="#FFFFFF" size={20} />
                 </TouchableOpacity>
               </View>
-              <Text className="text-textSecondary text-[10px] italic">You will only receive sell requests between these amounts.</Text>
+              <Text className="text-textSecondary text-[10px] italic">
+                Range: {currencySymbol}{(parseFloat(minBuyLimit) * effectiveBuyRate).toLocaleString()} - 
+                {currencySymbol}{(parseFloat(maxBuyLimit) * effectiveBuyRate).toLocaleString()} {currencyCode}
+              </Text>
             </Animated.View>
           )}
         </AppCard>
