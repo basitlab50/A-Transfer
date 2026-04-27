@@ -269,7 +269,7 @@ const Dashboard = ({ navigation }: Props) => {
           <AppButton 
             title="Quick Transfer" 
             variant="accent" 
-            className="px-12 py-4 shadow-xl shadow-accent/10 rounded-[24px] w-full" 
+            className="px-12 py-4 shadow-xl shadow-accent/10 rounded-[24px]" 
             textClassName="text-lg"
             icon={<Repeat color="#76b33a" size={20} />}
             onPress={() => navigation.navigate('SelectCountry', { mode: 'transfer' })}
