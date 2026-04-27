@@ -264,6 +264,18 @@ const Dashboard = ({ navigation }: Props) => {
           </View>
         </AppCard>
 
+        {/* Quick Transfer - Primary Action */}
+        <View className="items-center mb-8">
+          <AppButton 
+            title="Quick Transfer" 
+            variant="accent" 
+            className="w-full py-5 shadow-xl shadow-accent/10 rounded-[28px]" 
+            textClassName="text-lg font-bold"
+            icon={<Repeat color="#76b33a" size={20} />}
+            onPress={() => navigation.navigate('SelectCountry', { mode: 'transfer' })}
+          />
+        </View>
+
         {/* Ongoing Transactions Stack */}
         {(ongoingUserTransactions || []).length > 0 && (
           <View className="mb-6">
@@ -341,18 +353,6 @@ const Dashboard = ({ navigation }: Props) => {
             </View>
           </Animated.View>
         )}
-
-        {/* Quick Transfer - Branded for Success (Green) */}
-        <View className="items-center mb-10">
-          <AppButton 
-            title="Quick Transfer" 
-            variant="accent" 
-            className="px-12 py-4 shadow-xl shadow-accent/10 rounded-[24px]" 
-            textClassName="text-lg"
-            icon={<Repeat color="#76b33a" size={20} />}
-            onPress={() => navigation.navigate('SelectCountry', { mode: 'transfer' })}
-          />
-        </View>
 
         {/* Branded Services Section */}
         <View className="flex-row justify-between items-center mb-6">
