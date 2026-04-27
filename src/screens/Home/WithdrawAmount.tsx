@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Alert, ActivityIndicator, Button } from 'react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 import { db, auth } from '../../config/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, runTransaction, increment, updateDoc } from 'firebase/firestore';
 import { ArrowRightLeft, ArrowRight, ShoppingBag, Landmark, Smartphone, CheckCircle2, Home, Clock, Info, Wallet, Landmark as BankIcon } from 'lucide-react-native';
 
 const WithdrawAmount = ({ route, navigation }: any) => {
