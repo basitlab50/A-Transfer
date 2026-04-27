@@ -417,8 +417,12 @@ const TransactionStatus = ({ route, navigation }: any) => {
             <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 }}>Payout Confirmed?</Text>
             <Text style={{ color: '#94A3B8', textAlign: 'center', marginBottom: 25 }}>The merchant has confirmed the payout. Once you confirm receipt, the A-Credits will be automatically sent to the merchant.</Text>
             <TouchableOpacity onPress={confirmWithdrawalReceived} disabled={processing} style={{ backgroundColor: '#76b33a', padding: 20, borderRadius: 20, alignItems: 'center' }}>
-               {processing ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Yes, Release Credits</Text>}
+               {processing ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Yes, Release A-Credit</Text>}
             </TouchableOpacity>
+            
+            <View style={{ marginTop: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#94A3B8', fontSize: 14, fontWeight: 'medium' }}>Funds not received yet.</Text>
+            </View>
           </View>
         )}
 
