@@ -43,7 +43,8 @@ const MerchantDashboard = ({ navigation }: any) => {
     updateMerchantBuyRate,
     updateMerchantBuyLimits,
     updateMerchantSellMin,
-    balance
+    balance,
+    ongoingMerchantTransactions
   } = useWalletStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mRate, setMRate] = useState(userProfile?.sellingRate?.toString() || '1.5');
@@ -634,15 +635,17 @@ const MerchantDashboard = ({ navigation }: any) => {
       </ScrollView>
 
       {/* Action Footer */}
-      <View className="absolute bottom-10 left-6 right-6">
-        <AppButton 
-          title="Fulfill Pending Orders"
-          variant="accent"
-          size="large"
-          className="shadow-2xl shadow-accent/20"
-          onPress={() => {}}
-        />
-      </View>
+      {ongoingMerchantTransactions.length > 0 && (
+        <View className="absolute bottom-10 left-6 right-6">
+          <AppButton 
+            title={`Fulfill ${ongoingMerchantTransactions.length} Pending Order${ongoingMerchantTransactions.length > 1 ? 's' : ''}`}
+            variant="accent"
+            size="large"
+            className="shadow-2xl shadow-accent/20"
+            onPress={() => navigation.navigate('MerchantOngoingTransactions')}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 };

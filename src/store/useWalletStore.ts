@@ -91,6 +91,7 @@ interface WalletState {
   };
   notifications: AppNotification[];
   merchantTransactions: any[];
+  ongoingMerchantTransactions: any[];
   // Actions
   completeKYC: () => void;
   increaseInventory: (amount: number) => void;
@@ -163,6 +164,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   pendingRequests: [],
   notifications: [],
   merchantTransactions: [],
+  ongoingMerchantTransactions: [],
   systemSettings: {
     exchangeRates: {
       'Ghana': 12.5,
@@ -568,6 +570,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     let unsubscribeHistory: (() => void) | null = null;
     let unsubscribeMerchantHistory: (() => void) | null = null;
     let unsubscribeNotifications: (() => void) | null = null;
+    let unsubscribeOngoingMerchant: (() => void) | null = null;
 
     onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -689,6 +692,20 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           set({ merchantTransactions: txs });
         });
 
+        // Listen to ongoing merchant transactions
+        const qOngoingMerchant = query(
+          collection(db, 'ongoing_transactions'),
+          where('merchantId', '==', user.uid),
+          where('status', 'in', ['awaiting_confirmation', 'awaiting_merchant_payment', 'merchant_paid'])
+        );
+
+        unsubscribeOngoingMerchant = onSnapshot(qOngoingMerchant, (snapshot) => {
+          const txs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          // Sort by timestamp desc
+          txs.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          set({ ongoingMerchantTransactions: txs });
+        });
+
         // Listen to notifications
         const qNotify = collection(db, 'users', user.uid, 'notifications');
         unsubscribeNotifications = onSnapshot(qNotify, (snapshot) => {
@@ -705,6 +722,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         if (unsubscribeHistory) unsubscribeHistory();
         if (unsubscribeMerchantHistory) unsubscribeMerchantHistory();
         if (unsubscribeNotifications) unsubscribeNotifications();
+        if (unsubscribeOngoingMerchant) unsubscribeOngoingMerchant();
         set({ 
           isAuthenticated: false, 
           userProfile: null, 
@@ -714,6 +732,8 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           merchantEarnings: 0,
           merchantStatus: 'none',
           notifications: [],
+          merchantTransactions: [],
+          ongoingMerchantTransactions: [],
           isAdmin: false
         });
       }
