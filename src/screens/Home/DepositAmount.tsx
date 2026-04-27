@@ -134,31 +134,42 @@ const DepositAmount = ({ route, navigation }: any) => {
               
               <View style={{ height: 1, width: '100%', backgroundColor: '#334155', marginVertical: 24 }} />
               
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ marginBottom: 40 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <Text style={{ color: '#94A3B8', fontSize: 12 }}>Merchant Limits:</Text>
-                  <Text style={{ color: '#F8FAFC', fontSize: 12, fontWeight: 'bold' }}>{sellingMin} - {merchantInventory} A</Text>
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ color: '#94A3B8', fontSize: 12 }}>Total Cost:</Text>
-                  <Text style={{ color: '#76b33a', fontSize: 12, fontWeight: 'bold' }}>{currencySymbol}{localCost.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currencyCode}</Text>
-                </View>
-                {isOutOfRangeActual && (
-                  <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: 'bold', marginTop: 10, textAlign: 'center', textTransform: 'uppercase' }}>
-                    Amount must be between {sellingMin} and {merchantInventory} A-Credits
-                  </Text>
-                )}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#F8FAFC', fontSize: 18, fontWeight: 'bold' }}>
+                  You Pay: {isLocalCurrencyMode ? `A ${creditsToBuy.toFixed(2)}` : `${currencySymbol}${localCost.toLocaleString()} ${currencyCode}`}
+                </Text>
               </View>
-
-              <TouchableOpacity 
-                disabled={!inputValue || parseFloat(inputValue) === 0 || isOutOfRangeActual}
-                onPress={() => setStep('payment')}
-                style={{ backgroundColor: (!inputValue || parseFloat(inputValue) === 0 || isOutOfRangeActual) ? 'rgba(148, 163, 184, 0.1)' : '#76b33a', paddingVertical: 22, borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#76b33a', shadowOffset: { width: 0, height: 10 }, shadowOpacity: (!inputValue || isOutOfRangeActual) ? 0 : 0.2, shadowRadius: 20 }}
-              >
-                <Text style={{ color: (!inputValue || parseFloat(inputValue) === 0 || isOutOfRangeActual) ? '#64748B' : '#0A192F', fontWeight: 'bold', fontSize: 18 }}>Continue to Payment</Text>
-              </TouchableOpacity>
             </View>
+
+            <View style={{ marginBottom: 30 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+                <Text style={{ color: '#94A3B8', fontSize: 12 }}>Merchant Limits:</Text>
+                <Text style={{ color: '#F8FAFC', fontSize: 12, fontWeight: 'bold' }}>{sellingMin} - {merchantInventory} A</Text>
+              </View>
+              {isOutOfRangeActual && (
+                <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: 'bold', textAlign: 'center', textTransform: 'uppercase' }}>
+                  Amount must be between {sellingMin} and {merchantInventory} A-Credits
+                </Text>
+              )}
+            </View>
+
+            <TouchableOpacity 
+              disabled={!inputValue || parseFloat(inputValue) === 0 || isOutOfRangeActual}
+              onPress={() => setStep('payment')}
+              style={{ 
+                backgroundColor: (!inputValue || isOutOfRangeActual) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(118, 179, 58, 0.2)', 
+                paddingVertical: 20, 
+                borderRadius: 24, 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                flexDirection: 'row', 
+                borderWidth: 1, 
+                borderColor: (!inputValue || isOutOfRangeActual) ? '#334155' : 'rgba(118, 179, 58, 0.4)' 
+              }}
+            >
+              <Text style={{ color: (!inputValue || isOutOfRangeActual) ? '#475569' : '#76b33a', fontWeight: 'bold', fontSize: 18, marginRight: 10 }}>Continue to Payment</Text>
+              <ArrowRight color={(!inputValue || isOutOfRangeActual) ? '#475569' : '#76b33a'} size={20} />
+            </TouchableOpacity>
           </View>
         ) : (
           <View>
