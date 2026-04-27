@@ -612,7 +612,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         const qTx = query(
           collection(db, 'ongoing_transactions'),
           where('userId', '==', user.uid),
-          where('status', 'in', ['awaiting_confirmation', 'awaiting_merchant_payment', 'merchant_paid', 'completed'])
+          where('status', 'in', ['awaiting_confirmation', 'awaiting_merchant_payment', 'merchant_paid'])
         );
         
         unsubscribeActiveTx = onSnapshot(qTx, (snapshot) => {
