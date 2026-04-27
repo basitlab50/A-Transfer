@@ -12,7 +12,7 @@ const TransactionStatus = ({ route, navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [bridging, setBridging] = useState(false);
-  const { requestCancellation } = useWalletStore();
+  const requestCancellation = useWalletStore(state => state.requestCancellation);
 
   const fetchTx = async () => {
     if (!transactionId) return;
@@ -146,35 +146,37 @@ const TransactionStatus = ({ route, navigation }: any) => {
     }
   };
 
-  const handleCancelOrder = () => {
-    if (!tx) return;
+  const handleCancelOrder = async () => {
+    if (!tx || !tx.id) return;
     
+    // For immediate cancellation (searching)
+    if (!tx.merchantId || tx.merchantId === 'SYSTEM_AUTO_ASSIGN') {
+      try {
+        await updateDoc(doc(db, 'ongoing_transactions', tx.id), { 
+          status: 'cancelled', 
+          cancelledAt: new Date().toISOString() 
+        });
+        handleFinish();
+      } catch (e: any) {
+        Alert.alert("Error", "Could not cancel order: " + e.message);
+      }
+      return;
+    }
+
+    // For Request for Cancellation (merchant assigned)
     Alert.alert(
-      "Cancel Order?",
-      "Are you sure you want to cancel this transfer?",
+      "Request Cancellation?",
+      "The merchant has been assigned. We need their approval to ensure funds haven't already been sent. Request now?",
       [
         { text: "No", style: "cancel" },
         { 
-          text: "Yes, Cancel", 
-          style: "destructive",
+          text: "Request for Cancellation", 
           onPress: async () => {
             try {
-              // If merchant is assigned (and not SYSTEM_AUTO_ASSIGN), request permission
-              if (tx.merchantId && tx.merchantId !== 'SYSTEM_AUTO_ASSIGN') {
-                await requestCancellation(tx.id);
-                Alert.alert("Request Sent", "A cancellation request has been sent to the merchant for approval.");
-              } else {
-                // Immediate cancellation for unassigned orders
-                await updateDoc(doc(db, 'ongoing_transactions', tx.id), { status: 'cancelled', cancelledAt: new Date().toISOString() });
-                navigation.dispatch(
-                  CommonActions.reset({
-                    index: 0,
-                    routes: [{ name: 'Dashboard' }],
-                  })
-                );
-              }
+              await requestCancellation(tx.id);
+              Alert.alert("Request Sent", "Cancellation request sent, wait for merchant to confirm.");
             } catch (e: any) {
-              Alert.alert("Error", "Failed to cancel order: " + e.message);
+              Alert.alert("Error", "Failed to send request: " + e.message);
             }
           }
         }
