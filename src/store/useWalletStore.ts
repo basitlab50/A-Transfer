@@ -740,6 +740,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           merchantEarnings: 0,
           merchantStatus: 'none',
           notifications: [],
+          transactions: [],
           merchantTransactions: [],
           ongoingMerchantTransactions: [],
           isAdmin: false

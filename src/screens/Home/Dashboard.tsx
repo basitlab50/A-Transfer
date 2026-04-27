@@ -16,19 +16,19 @@ interface Props {
 
 const Dashboard = ({ navigation }: Props) => {
   const { 
-    balance, 
-    userCountry, 
-    availableCountries, 
-    transactions, 
+    balance = 0, 
+    userCountry = 'Ghana', 
+    availableCountries = [], 
+    transactions = [], 
     toggleMerchantMode, 
     toggleAdminMode, 
-    isKYCVerified, 
+    isKYCVerified = false, 
     userProfile, 
     signOut, 
-    merchantStatus, 
-    isAdmin, 
-    ongoingUserTransactions,
-    notifications, 
+    merchantStatus = 'none', 
+    isAdmin = false, 
+    ongoingUserTransactions = [],
+    notifications = [], 
     resetMerchantStatus 
   } = useWalletStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -139,7 +139,7 @@ const Dashboard = ({ navigation }: Props) => {
                 <Animated.View 
                   entering={FadeInUp.duration(300).springify()}
                   exiting={FadeOutUp.duration(200)}
-                  className="absolute right-0 top-12 w-56 border border-slate-100 rounded-[28px] p-5 shadow-2xl z-[100]"
+                  className="absolute right-0 top-12 w-56 border border-slate-100 rounded-[28px] p-5 shadow-2xl z-50"
                   style={{ backgroundColor: '#FFFFFF', opacity: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 24, elevation: 15 }}
                 >
                   <View className="mb-4 pb-4 border-b border-slate-50">
@@ -265,7 +265,7 @@ const Dashboard = ({ navigation }: Props) => {
         </AppCard>
 
         {/* Ongoing Transactions Stack */}
-        {ongoingUserTransactions.length > 0 && (
+        {(ongoingUserTransactions || []).length > 0 && (
           <View className="mb-6">
             <View className="flex-row justify-between items-center mb-4 px-2">
               <Text className="text-textPrimary font-bold text-lg">Active Orders</Text>
@@ -274,9 +274,9 @@ const Dashboard = ({ navigation }: Props) => {
               </View>
             </View>
             
-            {ongoingUserTransactions.map((tx, idx) => (
+            {(ongoingUserTransactions || []).map((tx, idx) => (
               <Animated.View 
-                key={tx.id}
+                key={tx.id || idx}
                 entering={FadeInUp.delay(idx * 100)} 
                 className="mb-3"
               >
@@ -289,7 +289,7 @@ const Dashboard = ({ navigation }: Props) => {
                   </View>
                   <View className="flex-1">
                     <Text className="text-orange font-bold text-base">{tx.type === 'withdraw' ? 'Withdrawal' : 'Deposit'}</Text>
-                    <Text className="text-textSecondary text-[8px] font-mono mb-1">ID: {tx.id}</Text>
+                    <Text className="text-textSecondary text-[8px] font-mono mb-1">ID: {tx.id || 'N/A'}</Text>
                     <Text className="text-textSecondary text-[10px] uppercase font-bold tracking-widest">
                       {tx.type === 'withdraw' 
                         ? (tx.status === 'merchant_paid' ? '🔥 PAID - CONFIRM NOW' : '⏳ WAITING FOR MERCHANT')
@@ -386,7 +386,7 @@ const Dashboard = ({ navigation }: Props) => {
           </TouchableOpacity>
         </View>
 
-        {transactions.slice(0, 3).map((tx) => {
+        {(transactions || []).slice(0, 3).map((tx) => {
           const isOutbound = ['withdraw', 'transfer', 'outbound'].includes(tx.type);
           return (
             <TouchableOpacity 
