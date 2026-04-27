@@ -174,6 +174,55 @@ const MerchantDashboard = ({ navigation }: any) => {
           </View>
         </View>
 
+        {/* Main Merchant Card */}
+        <AppCard variant="gradient" className="mb-8 overflow-hidden">
+          <View className="flex-row justify-between items-start mb-6">
+            <View>
+              <Text className="text-accent text-[10px] font-bold tracking-[3px] uppercase mb-1">Liquidity Inventory</Text>
+              <View className="flex-row items-baseline">
+                <Text className="text-accent text-xl font-bold mr-1">A</Text>
+                <Text className="text-textPrimary text-3xl font-bold">
+                  {merchantInventory.toLocaleString()}
+                </Text>
+              </View>
+              <Text className="text-white/60 text-[10px] font-medium italic mt-1">
+                ≈ {currencySymbol}{localInventory.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currencyCode}
+              </Text>
+            </View>
+            <View className="bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
+              <Text className="text-white text-[10px] font-bold">TOP TIER</Text>
+            </View>
+          </View>
+
+          <View className="space-y-4">
+            <View>
+              <View className="flex-row justify-between mb-1.5">
+                <Text className="text-textSecondary text-[10px] font-bold uppercase">Stock Level</Text>
+                <Text className="text-textPrimary text-[10px] font-bold">82%</Text>
+              </View>
+              <View className="h-1.5 bg-primary/40 rounded-full overflow-hidden">
+                <View className="h-full bg-accent w-[82%]" />
+              </View>
+            </View>
+            
+            <View className="flex-row justify-between mt-4 border-t border-white/5 pt-4">
+              <View>
+                <Text className="text-textSecondary text-[10px] font-bold uppercase mb-1">Today's Profit</Text>
+                <View className="flex-row items-baseline">
+                  <Text className="text-accent font-bold text-lg">+A {merchantEarnings}</Text>
+                  <Text className="text-accent/60 text-[10px] ml-2 italic">
+                    ({currencySymbol}{localEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                  </Text>
+                </View>
+              </View>
+              <View className="items-end">
+                <Text className="text-textSecondary text-[10px] font-bold uppercase mb-1">Rank</Text>
+                <Text className="text-textPrimary font-bold text-lg">#14 Accra</Text>
+              </View>
+            </View>
+          </View>
+        </AppCard>
+
         {/* Availability Status Card */}
         <AppCard className="mb-6 border-slate-800/50 p-6">
           <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-4">Availability Controls</Text>
@@ -445,54 +494,7 @@ const MerchantDashboard = ({ navigation }: any) => {
           )}
         </AppCard>
 
-        {/* Main Merchant Card */}
-        <AppCard variant="gradient" className="mb-8 overflow-hidden">
-          <View className="flex-row justify-between items-start mb-6">
-            <View>
-              <Text className="text-accent text-[10px] font-bold tracking-[3px] uppercase mb-1">Liquidity Inventory</Text>
-              <View className="flex-row items-baseline">
-                <Text className="text-accent text-xl font-bold mr-1">A</Text>
-                <Text className="text-textPrimary text-3xl font-bold">
-                  {merchantInventory.toLocaleString()}
-                </Text>
-              </View>
-              <Text className="text-white/60 text-[10px] font-medium italic mt-1">
-                ≈ {currencySymbol}{localInventory.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currencyCode}
-              </Text>
-            </View>
-            <View className="bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
-              <Text className="text-white text-[10px] font-bold">TOP TIER</Text>
-            </View>
-          </View>
 
-          <View className="space-y-4">
-            <View>
-              <View className="flex-row justify-between mb-1.5">
-                <Text className="text-textSecondary text-[10px] font-bold uppercase">Stock Level</Text>
-                <Text className="text-textPrimary text-[10px] font-bold">82%</Text>
-              </View>
-              <View className="h-1.5 bg-primary/40 rounded-full overflow-hidden">
-                <View className="h-full bg-accent w-[82%]" />
-              </View>
-            </View>
-            
-            <View className="flex-row justify-between mt-4 border-t border-white/5 pt-4">
-              <View>
-                <Text className="text-textSecondary text-[10px] font-bold uppercase mb-1">Today's Profit</Text>
-                <View className="flex-row items-baseline">
-                  <Text className="text-accent font-bold text-lg">+A {merchantEarnings}</Text>
-                  <Text className="text-accent/60 text-[10px] ml-2 italic">
-                    ({currencySymbol}{localEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                  </Text>
-                </View>
-              </View>
-              <View className="items-end">
-                <Text className="text-textSecondary text-[10px] font-bold uppercase mb-1">Rank</Text>
-                <Text className="text-textPrimary font-bold text-lg">#14 Accra</Text>
-              </View>
-            </View>
-          </View>
-        </AppCard>
 
         <View className="flex-row flex-wrap justify-between mb-8">
           {[
