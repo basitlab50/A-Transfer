@@ -71,8 +71,8 @@ const MerchantDashboard = ({ navigation }: any) => {
   const currencySymbol = currentCountry?.currencySymbol || '$';
   const currencyCode = currentCountry?.currencyCode || 'USD';
 
-  const merchantSellRate = userProfile?.sellingRate || 1.5;
-  const merchantBuyRate = userProfile?.buyingRate || 0.9;
+  const merchantSellRate = isSellRateValid && mRate !== '' ? parseFloat(mRate) : (userProfile?.sellingRate || 1.5);
+  const merchantBuyRate = isBuyRateValid && bRate !== '' ? parseFloat(bRate) : (userProfile?.buyingRate || 0.9);
   
   const effectiveSellRate = merchantSellRate * baseRate;
   const effectiveBuyRate = merchantBuyRate * baseRate;
