@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Alert, ActivityIndicator, Button } from 'react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 import { db, auth } from '../../config/firebase';
-import { doc, setDoc, runTransaction, increment, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, increment, updateDoc, writeBatch, getDoc, collection } from 'firebase/firestore';
 import { ArrowRightLeft, ArrowRight, ShoppingBag, Landmark, Smartphone, CheckCircle2, Home, Clock } from 'lucide-react-native';
+import { sendPushNotificationToUser } from '../../utils/notifications';
+
 
 const DepositAmount = ({ route, navigation }: any) => {
   const { merchant } = route.params || {};
@@ -50,35 +52,61 @@ const DepositAmount = ({ route, navigation }: any) => {
       const txId = 'DEP' + Date.now();
       const amt = Number(creditsToBuy);
 
-      await runTransaction(db, async (transaction) => {
-        const mRef = doc(db, 'users', merchant.id);
-        const mSnap = await transaction.get(mRef);
-        if (!mSnap.exists()) throw new Error('Merchant not found');
-        
-        const currentInventory = mSnap.data().merchantInventory || 0;
-        if (currentInventory < amt) throw new Error('Merchant has insufficient inventory for this request.');
+      const mRef = doc(db, 'users', merchant.id);
+      const mSnap = await getDoc(mRef);
+      if (!mSnap.exists()) throw new Error('Merchant not found');
+      
+      const currentInventory = mSnap.data().merchantInventory || 0;
+      if (currentInventory < amt) throw new Error('Merchant has insufficient inventory for this request.');
 
-        const txData = {
-          userId: auth.currentUser?.uid || 'anonymous',
-          userName: userProfile?.name || 'User',
-          userPhone: userProfile?.phone || '',
-          merchantId: merchant.id,
-          amount: amt,
-          localAmount: localCost,
-          currencyCode,
-          status: 'awaiting_confirmation',
-          timestamp: new Date().toISOString(),
-          type: 'deposit',
-          senderCountry: merchant.country,
-          destinationCountry: 'A-Wallet',
-          senderCurrency: currencyCode,
-          recipientCurrency: 'A-Credit',
-          inEscrow: true
-        };
+      const batch = writeBatch(db);
 
-        transaction.update(mRef, { merchantInventory: increment(-amt) });
-        transaction.set(doc(db, 'ongoing_transactions', txId), txData);
+      const txData = {
+        userId: auth.currentUser?.uid || 'anonymous',
+        userName: userProfile?.name || 'User',
+        userPhone: userProfile?.phone || '',
+        merchantId: merchant.id,
+        amount: amt,
+        localAmount: localCost,
+        currencyCode,
+        status: 'awaiting_confirmation',
+        timestamp: new Date().toISOString(),
+        type: 'deposit',
+        senderCountry: merchant.country,
+        destinationCountry: 'A-Wallet',
+        senderCurrency: currencyCode,
+        recipientCurrency: 'A-Credit',
+        inEscrow: true,
+        merchantSellingRate: merchantRate
+      };
+
+      batch.update(mRef, { merchantInventory: increment(-amt) });
+      batch.set(doc(db, 'ongoing_transactions', txId), txData);
+
+      // Notify merchant
+      const notifRef = doc(collection(db, 'users', merchant.id, 'notifications'));
+      batch.set(notifRef, {
+        id: notifRef.id,
+        title: 'New Deposit Request',
+        message: `${userProfile?.name || 'A user'} wants to deposit A ${amt.toLocaleString()}.`,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        type: 'info'
       });
+
+      // Notify user
+      const userNotifRef = doc(collection(db, 'users', auth.currentUser!.uid, 'notifications'));
+      batch.set(userNotifRef, {
+        id: userNotifRef.id,
+        title: 'Deposit Requested',
+        message: `You have requested to deposit A ${amt.toLocaleString()} via ${merchant.name}.`,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        type: 'info'
+      });
+
+
+      await batch.commit();
 
       setStep('success');
     } catch (err: any) {

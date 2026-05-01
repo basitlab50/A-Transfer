@@ -75,6 +75,18 @@ const TransactionStatus = ({ route, navigation }: any) => {
         merchantId: chosen.id,
         merchantDetails: (chosen as any).paymentDetails || {}
       });
+
+      // Notify the chosen merchant
+      const notifRef = doc(collection(db, 'users', chosen.id, 'notifications'));
+      await setDoc(notifRef, {
+        id: notifRef.id,
+        title: 'New Auto-Assigned Order',
+        message: `You have been assigned to handle a ${data.type} request for A ${data.amount.toLocaleString()}.`,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        type: 'info'
+      });
+
     } catch (e: any) {
       console.error('Auto-Assign Error:', e.message);
     } finally {
@@ -119,6 +131,29 @@ const TransactionStatus = ({ route, navigation }: any) => {
         isBridgePayout: true
       });
 
+      // Notify user about the bridge phase 2
+      const userNotifRef = doc(collection(db, 'users', auth.currentUser!.uid, 'notifications'));
+      await setDoc(userNotifRef, {
+        id: userNotifRef.id,
+        title: 'Bridge Phase 2 Active',
+        message: `Your funds have been bridged. Merchant ${destMerchant.name || 'A-Merchant'} in ${destCountry} is now processing your payout.`,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        type: 'success'
+      });
+
+      // Notify the bridge merchant
+      const merchantNotifRef = doc(collection(db, 'users', destMerchant.id, 'notifications'));
+      await setDoc(merchantNotifRef, {
+        id: merchantNotifRef.id,
+        title: 'New Bridge Payout',
+        message: `You have been assigned to payout ${data.bridgeData.totalAmount.toLocaleString()} to ${data.userName} for a bridge transaction.`,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        type: 'info'
+      });
+
+
       // 4. Switch the current tracker to the new transaction
       navigation.replace('TransactionStatus', { transactionId: newTxId });
     } catch (e: any) {
@@ -137,13 +172,36 @@ const TransactionStatus = ({ route, navigation }: any) => {
         const snap = await t.get(tRef);
         if (snap.data().status === 'completed') throw new Error('Already completed');
         
+        const mSnap = await t.get(mRef);
+        if (!mSnap.exists()) throw new Error('Merchant missing');
+        const merchantData = mSnap.data();
+        
+        // Calculate profit based on merchant's buy rate at the time, or current if not saved
+        const buyRate = tx.merchantBuyRate || merchantData.buyingRate || 0.9;
+        const profit = tx.amount * (1 - buyRate);
+        
         // Note: Balance was already deducted from user at initiation (Escrow)
-        // Now we just credit the merchant
-        t.update(mRef, { merchantInventory: increment(tx.amount) });
-        t.update(tRef, { status: 'completed', completedAt: new Date().toISOString(), inEscrow: false });
+        // Now we credit the merchant's inventory and earnings
+        t.update(mRef, { 
+          merchantInventory: increment(tx.amount),
+          merchantEarnings: increment(profit)
+        });
+        t.update(tRef, { status: 'completed', completedAt: new Date().toISOString(), inEscrow: false, profitEarned: profit });
+
+        // Notify merchant
+        const notifRef = doc(collection(db, 'users', tx.merchantId, 'notifications'));
+        t.set(notifRef, {
+          id: notifRef.id,
+          title: 'Withdrawal Complete',
+          message: `${tx.userName || 'The user'} confirmed receipt of funds. Escrow released.`,
+          timestamp: new Date().toISOString(),
+          isRead: false,
+          type: 'success'
+        });
       });
     } catch (e: any) { 
       Alert.alert('Error', e.message); 
+    } finally {
       setProcessing(false);
     }
   };
@@ -448,6 +506,25 @@ const TransactionStatus = ({ route, navigation }: any) => {
               <Text style={{ color: '#94A3B8', fontSize: 14, fontWeight: 'medium', textDecorationLine: 'underline' }}>Funds not received yet.</Text>
             </TouchableOpacity>
           </View>
+        )}
+
+        {/* Chat / Message Merchant */}
+        {tx.merchantId && tx.merchantId !== 'SYSTEM_AUTO_ASSIGN' && (
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('TransactionChat', { 
+              transactionId: tx.id, 
+              otherPartyName: tx.merchantDetails?.name || 'Merchant', 
+              otherPartyId: tx.merchantId 
+            })}
+            style={{ marginHorizontal: 25, backgroundColor: '#1e293b', padding: 18, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 30, borderWidth: 1, borderColor: '#334155', position: 'relative' }}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Message Merchant</Text>
+            {tx.unreadUserCount > 0 && (
+              <View style={{ position: 'absolute', top: -8, right: -8, backgroundColor: '#EF4444', minWidth: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#0A192F', paddingHorizontal: 6 }}>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>{tx.unreadUserCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         )}
 
         {/* Timeline */}

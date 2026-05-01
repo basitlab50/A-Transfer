@@ -5,6 +5,7 @@ import { useWalletStore } from '../../store/useWalletStore';
 import { AppButton } from '../../components/ui/AppButton';
 import { AppCard } from '../../components/ui/AppCard';
 import { Paystack } from 'react-native-paystack-webview';
+import { sendLocalNotificationSafe } from '../../utils/notifications';
 
 const Restock = ({ navigation }: any) => {
   const [amount, setAmount] = useState('');
@@ -38,6 +39,12 @@ const Restock = ({ navigation }: any) => {
     increaseInventory(numAmount);
     setIsSuccess(true);
     setShowPaystack(false);
+    
+    // Trigger the physical ring and popup!
+    sendLocalNotificationSafe(
+      'Restock Complete ✅', 
+      `Your merchant inventory has been credited with A ${numAmount}.`
+    );
   };
 
   const mBuyRate = systemSettings?.merchantBuyRate || 1.0;
@@ -124,17 +131,17 @@ const Restock = ({ navigation }: any) => {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            onPress={() => setPaymentMethod('Bank Transfer')}
-            className={`flex-row items-center p-5 rounded-3xl border mb-10 ${paymentMethod === 'Bank Transfer' ? 'bg-accent/5 border-accent' : 'bg-surface border-card-border/30'}`}
+            onPress={() => setPaymentMethod('Debit/Credit Card')}
+            className={`flex-row items-center p-5 rounded-3xl border mb-10 ${paymentMethod === 'Debit/Credit Card' ? 'bg-accent/5 border-accent' : 'bg-surface border-card-border/30'}`}
           >
             <View className="bg-blue-500/10 p-3 rounded-xl mr-4">
               <Landmark color="#3b82f6" size={20} />
             </View>
             <View className="flex-1">
-              <Text className="text-textPrimary font-bold">Local Bank</Text>
-              <Text className="text-textSecondary text-xs">Instant settlement via RTGS</Text>
+              <Text className="text-textPrimary font-bold">Debit / Credit Card</Text>
+              <Text className="text-textSecondary text-xs">Visa, Mastercard, Verve</Text>
             </View>
-            {paymentMethod === 'Bank Transfer' && <CheckCircle2 color="#76b33a" size={20} />}
+            {paymentMethod === 'Debit/Credit Card' && <CheckCircle2 color="#76b33a" size={20} />}
           </TouchableOpacity>
 
           <AppButton 
@@ -149,10 +156,11 @@ const Restock = ({ navigation }: any) => {
           {showPaystack && Platform.OS !== 'web' && (
             <Paystack  
               paystackKey="pk_test_6e29eb50662592ed6fb7b98beb8ccfc82127f105"
-              amount={localCost * 100}
+              amount={parseFloat(localCost.toFixed(2))}
               billingEmail={userProfile?.email || "customer@example.com"}
               billingName={userProfile?.name || "Customer"}
               currency={currencyCode}
+              channels={paymentMethod === 'Mobile Money' ? ['mobile_money'] : ['card']}
               onCancel={(e) => {
                 setShowPaystack(false);
                 Alert.alert('Payment Cancelled', 'The transaction was cancelled.');

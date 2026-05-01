@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, SafeAreaView, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Image } from 'react-native';
 import { 
   Briefcase, 
-  User, 
+  User as UserIcon, 
   ChevronRight, 
   ArrowRight, 
   Mail, 
@@ -17,6 +17,7 @@ import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useWalletStore } from '../../store/useWalletStore';
 import { AppButton } from '../../components/ui/AppButton';
 import { AppAlert } from '../../components/ui/AppAlert';
+import { pickImage, uploadKYCDocument } from '../../utils/kyc';
 
 const MerchantOnboarding = ({ navigation }: any) => {
   // Form State
@@ -28,33 +29,51 @@ const MerchantOnboarding = ({ navigation }: any) => {
   const [phoneCode, setPhoneCode] = useState('+233');
   const [showPhoneCodeDropdown, setShowPhoneCodeDropdown] = useState(false);
   const [country, setCountry] = useState('');
-  const [hasId, setHasId] = useState(false);
-  const [hasCert, setHasCert] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-   const [error, setError] = useState<{ title: string, message: string } | null>(null);
-   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-   const [showSuccess, setShowSuccess] = useState(false);
-   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
-   
-   const { applyForMerchant, availableCountries } = useWalletStore();
+  
+  // Document State
+  const [idImage, setIdImage] = useState<string | null>(null);
+  const [certImage, setCertImage] = useState<string | null>(null);
+  const [selfieImage, setSelfieImage] = useState<string | null>(null);
 
-  const isFormValid = firstName.trim() && lastName.trim() && businessName.trim() && email.trim() && phone.trim() && country && hasId && hasCert;
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState<{ title: string, message: string } | null>(null);
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+   
+  const { applyForMerchant, availableCountries } = useWalletStore();
+
+  const handlePickId = async () => {
+    const uri = await pickImage(true);
+    if (uri) setIdImage(uri);
+  };
+
+  const handlePickCert = async () => {
+    const uri = await pickImage(false); // Can be gallery for certificates
+    if (uri) setCertImage(uri);
+  };
+
+  const handlePickSelfie = async () => {
+    const uri = await pickImage(true);
+    if (uri) setSelfieImage(uri);
+  };
+
+  const isFormValid = firstName.trim() && lastName.trim() && businessName.trim() && email.trim() && phone.trim() && country && idImage && certImage && selfieImage;
 
   const handleSubmit = async () => {
     setAttemptedSubmit(true);
-    // STRICT VALIDATION
     if (!isFormValid) {
       Alert.alert('Required Fields', 'Please complete all sections and upload the required documents before submitting.');
       return;
     }
 
-    if (!hasId || !hasCert) {
-      Alert.alert('Documents Missing', 'Verification requires both your Government ID and Business Certificate. Please tap the scan icons below.');
-      return;
-    }
-
     setIsVerifying(true);
     try {
+      // Upload all documents
+      const idUrl = await uploadKYCDocument(idImage!, 'merchant_kyc', 'gov_id.jpg');
+      const certUrl = await uploadKYCDocument(certImage!, 'merchant_kyc', 'business_cert.jpg');
+      const selfieUrl = await uploadKYCDocument(selfieImage!, 'merchant_kyc', 'selfie.jpg');
+
       await applyForMerchant({ 
         businessName, 
         ownerName: `${firstName} ${lastName}`, 
@@ -64,9 +83,9 @@ const MerchantOnboarding = ({ navigation }: any) => {
         email,
         country,
         documents: {
-          idType: 'Government ID',
-          idUrl: 'https://placeholder.com/id.jpg',
-          certUrl: 'https://placeholder.com/cert.jpg'
+          idUrl,
+          certUrl,
+          selfieUrl
         }
       });
       
@@ -205,7 +224,6 @@ const MerchantOnboarding = ({ navigation }: any) => {
                 </View>
               </View>
 
-              {/* Phone Code Dropdown */}
               {showPhoneCodeDropdown && (
                 <View className="mt-2 bg-surface border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
                   <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
@@ -282,41 +300,55 @@ const MerchantOnboarding = ({ navigation }: any) => {
               )}
             </View>
 
-            {/* Document Upload Simulation */}
+            {/* Document Upload */}
             <View>
               <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-4 ml-1">Required Documents</Text>
               
               <TouchableOpacity 
-                onPress={() => setHasId(true)}
-                className={`flex-row items-center p-5 rounded-3xl border mb-3 ${hasId ? 'bg-accent/10 border-accent/30' : (attemptedSubmit ? 'bg-red-500/5 border-red-500' : 'bg-surface border-slate-800')}`}
+                onPress={handlePickId}
+                className={`flex-row items-center p-5 rounded-3xl border mb-3 ${idImage ? 'bg-accent/10 border-accent/30' : (attemptedSubmit ? 'bg-red-500/5 border-red-500' : 'bg-surface border-slate-800')}`}
               >
-                <View className="bg-primary/50 p-3 rounded-xl mr-4">
-                  {hasId ? <CheckCircle2 color="#76b33a" size={20} /> : <Camera color={attemptedSubmit ? "#EF4444" : "#94A3B8"} size={20} />}
+                <View className="bg-primary/50 p-3 rounded-xl mr-4 overflow-hidden w-12 h-12 items-center justify-center">
+                  {idImage ? <Image source={{ uri: idImage }} className="w-12 h-12" /> : <Camera color={attemptedSubmit ? "#EF4444" : "#94A3B8"} size={20} />}
                 </View>
                 <View className="flex-1">
-                  <Text className={`font-bold ${attemptedSubmit && !hasId ? 'text-red-500' : 'text-textPrimary'}`}>Government ID</Text>
-                  <Text className="text-textSecondary text-[10px]">National ID, Passport or Drivers License</Text>
+                  <Text className={`font-bold ${attemptedSubmit && !idImage ? 'text-red-500' : 'text-textPrimary'}`}>Government ID</Text>
+                  <Text className="text-textSecondary text-[10px]">National ID or Passport</Text>
                 </View>
-                {!hasId && <Text className={`${attemptedSubmit ? 'text-red-500' : 'text-accent'} text-[10px] font-bold`}>TAP TO SCAN</Text>}
+                {idImage && <CheckCircle2 color="#76b33a" size={20} />}
               </TouchableOpacity>
 
               <TouchableOpacity 
-                onPress={() => setHasCert(true)}
-                className={`flex-row items-center p-5 rounded-3xl border ${hasCert ? 'bg-accent/10 border-accent/30' : (attemptedSubmit ? 'bg-red-500/5 border-red-500' : 'bg-surface border-slate-800')}`}
+                onPress={handlePickCert}
+                className={`flex-row items-center p-5 rounded-3xl border mb-3 ${certImage ? 'bg-accent/10 border-accent/30' : (attemptedSubmit ? 'bg-red-500/5 border-red-500' : 'bg-surface border-slate-800')}`}
               >
-                <View className="bg-primary/50 p-3 rounded-xl mr-4">
-                  {hasCert ? <CheckCircle2 color="#76b33a" size={20} /> : <FileText color={attemptedSubmit ? "#EF4444" : "#94A3B8"} size={20} />}
+                <View className="bg-primary/50 p-3 rounded-xl mr-4 overflow-hidden w-12 h-12 items-center justify-center">
+                  {certImage ? <Image source={{ uri: certImage }} className="w-12 h-12" /> : <FileText color={attemptedSubmit ? "#EF4444" : "#94A3B8"} size={20} />}
                 </View>
                 <View className="flex-1">
-                  <Text className={`font-bold ${attemptedSubmit && !hasCert ? 'text-red-500' : 'text-textPrimary'}`}>Business Certificate</Text>
-                  <Text className="text-textSecondary text-[10px]">Registration or Incorporation Docs</Text>
+                  <Text className={`font-bold ${attemptedSubmit && !certImage ? 'text-red-500' : 'text-textPrimary'}`}>Business Certificate</Text>
+                  <Text className="text-textSecondary text-[10px]">Registration Docs</Text>
                 </View>
-                {!hasCert && <Text className={`${attemptedSubmit ? 'text-red-500' : 'text-accent'} text-[10px] font-bold`}>TAP TO SCAN</Text>}
+                {certImage && <CheckCircle2 color="#76b33a" size={20} />}
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                onPress={handlePickSelfie}
+                className={`flex-row items-center p-5 rounded-3xl border ${selfieImage ? 'bg-accent/10 border-accent/30' : (attemptedSubmit ? 'bg-red-500/5 border-red-500' : 'bg-surface border-slate-800')}`}
+              >
+                <View className="bg-primary/50 p-3 rounded-xl mr-4 overflow-hidden w-12 h-12 items-center justify-center">
+                  {selfieImage ? <Image source={{ uri: selfieImage }} className="w-12 h-12" /> : <UserIcon color={attemptedSubmit ? "#EF4444" : "#94A3B8"} size={20} />}
+                </View>
+                <View className="flex-1">
+                  <Text className={`font-bold ${attemptedSubmit && !selfieImage ? 'text-red-500' : 'text-textPrimary'}`}>Biometric Selfie</Text>
+                  <Text className="text-textSecondary text-[10px]">Verify your identity</Text>
+                </View>
+                {selfieImage && <CheckCircle2 color="#76b33a" size={20} />}
               </TouchableOpacity>
             </View>
 
             <AppButton 
-              title="Submit Application" 
+              title={isVerifying ? "Submitting Application..." : "Submit Application"} 
               variant={isFormValid ? "accent" : "outline"} 
               size="large"
               className={`mt-6 ${!isFormValid ? 'opacity-50' : ''}`}
@@ -333,3 +365,4 @@ const MerchantOnboarding = ({ navigation }: any) => {
 };
 
 export default MerchantOnboarding;
+

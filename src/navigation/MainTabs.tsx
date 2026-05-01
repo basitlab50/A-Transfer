@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, History, User } from 'lucide-react-native';
+import { Home, History, User as UserIcon } from 'lucide-react-native';
 import HomeStack from './HomeStack';
 import HistoryScreen from '../screens/Transactions/History';
 import ProfileScreen from '../screens/Profile/Profile';
@@ -51,7 +51,7 @@ export const MainTabs = () => {
         component={ProfileScreen} 
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <UserIcon color={color} size={size} />,
         }}
       />
     </Tab.Navigator>

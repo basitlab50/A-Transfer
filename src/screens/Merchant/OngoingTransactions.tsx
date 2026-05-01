@@ -119,6 +119,15 @@ const MerchantOngoingTransactions = ({ navigation }: any) => {
                   <Text style={{ color: '#fff', fontSize: 32, fontWeight: 'bold' }}>{item.amount.toLocaleString()}</Text>
                 </View>
                 
+                {!isDeposit && item.localAmount && (
+                  <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: 'bold' }}>PAY USER:</Text>
+                    <Text style={{ color: '#76b33a', fontSize: 18, fontWeight: 'bold', marginLeft: 8 }}>
+                      {item.localAmount.toLocaleString()} {item.currencyCode}
+                    </Text>
+                  </View>
+                )}
+                
                 {!isDeposit && item.payoutDetails && (
                   <View style={{ marginTop: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#1E293B' }}>
                     <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', marginBottom: 10 }}>PAYOUT DETAILS:</Text>
@@ -138,6 +147,23 @@ const MerchantOngoingTransactions = ({ navigation }: any) => {
                   </View>
                 )}
               </View>
+
+              {/* Chat / Message Customer */}
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('TransactionChat', { 
+                  transactionId: item.id, 
+                  otherPartyName: item.userName || 'Customer', 
+                  otherPartyId: item.userId 
+                })}
+                style={{ backgroundColor: '#1e293b', padding: 18, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#334155', position: 'relative' }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Message Customer</Text>
+                {item.unreadMerchantCount > 0 && (
+                  <View style={{ position: 'absolute', top: -8, right: -8, backgroundColor: '#EF4444', minWidth: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#1E293B', paddingHorizontal: 6 }}>
+                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>{item.unreadMerchantCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
 
               {item.status === 'cancelled' ? (
                 <View className="bg-slate-800/50 p-5 rounded-[24px] border border-slate-700 items-center">
@@ -194,8 +220,25 @@ const MerchantOngoingTransactions = ({ navigation }: any) => {
 
                           // Note: Inventory was already deducted at initiation (Escrow)
                           // Now we just release to the user
+                          const mSnap = await transaction.get(doc(db, 'users', item.merchantId));
+                          const merchantData = mSnap.exists() ? mSnap.data() : {};
+                          const sellingRate = item.merchantSellingRate || merchantData.sellingRate || 1.5;
+                          const profit = item.amount * (sellingRate - 1);
+                          
                           transaction.update(uRef, { balance: increment(item.amount) });
-                          transaction.update(tRef, { status: 'completed', completedAt: new Date().toISOString(), inEscrow: false });
+                          transaction.update(doc(db, 'users', item.merchantId), { merchantEarnings: increment(profit) });
+                          transaction.update(tRef, { status: 'completed', completedAt: new Date().toISOString(), inEscrow: false, profitEarned: profit });
+
+                          // Notify user
+                          const notifRef = doc(collection(db, 'users', item.userId, 'notifications'));
+                          transaction.set(notifRef, {
+                            id: notifRef.id,
+                            title: 'Credits Released',
+                            message: `A ${item.amount.toLocaleString()} has been successfully added to your balance.`,
+                            timestamp: new Date().toISOString(),
+                            isRead: false,
+                            type: 'success'
+                          });
                         });
                         setLastTx({ ...item, status: 'completed' });
                         setSuccessMessage('Credits Delivered!');
@@ -203,6 +246,17 @@ const MerchantOngoingTransactions = ({ navigation }: any) => {
                         setShowSuccess(true);
                       } else {
                         await setDoc(txRef, { status: 'merchant_paid', merchantPaidAt: new Date().toISOString() }, { merge: true });
+                        
+                        // Notify user
+                        const notifRef = doc(collection(db, 'users', item.userId, 'notifications'));
+                        await setDoc(notifRef, {
+                          id: notifRef.id,
+                          title: 'Payout Sent',
+                          message: `Merchant ${item.merchantName || 'A-Merchant'} has sent the funds to your account.`,
+                          timestamp: new Date().toISOString(),
+                          isRead: false,
+                          type: 'success'
+                        });
                         setLastTx({ ...item, status: 'merchant_paid' });
                         setSuccessMessage('Payout Confirmed!');
                         setSuccessSubtext(`We have notified ${item.userName} that you have paid. Waiting for their confirmation.`);

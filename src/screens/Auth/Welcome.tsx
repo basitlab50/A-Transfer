@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, SafeAreaView, TouchableOpacity, Image, Dimensions } from 'react-native';
-import { ShieldCheck, Globe, Zap, ArrowRight, User } from 'lucide-react-native';
+import { ShieldCheck, Globe, Zap, ArrowRight, User as UserIcon } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { WelcomeNavigationProp } from '../../types/navigation';
 import { AppButton } from '../../components/ui/AppButton';
@@ -80,7 +80,7 @@ const Welcome = ({ navigation }: Props) => {
               variant="outline" 
               size="large"
               onPress={() => navigation.navigate('Register')}
-              icon={<User color="#94A3B8" size={20} />}
+              icon={<UserIcon color="#94A3B8" size={20} />}
               className="mt-2 border-slate-700"
             />
           </Animated.View>

@@ -20,7 +20,8 @@ import { useWalletStore } from '../../store/useWalletStore';
  */
 const AdminDetailList = ({ route, navigation }: any) => {
   const { type } = route.params;
-  const { fetchAllUsers, fetchAllTransactions } = useWalletStore();
+  const fetchAllUsers = useWalletStore(state => state.fetchAllUsers);
+  const fetchAllTransactions = useWalletStore(state => state.fetchAllTransactions);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -165,7 +166,7 @@ const AdminDetailList = ({ route, navigation }: any) => {
         
         <View style={{ flex: 1 }}>
           <Text style={styles.userName} numberOfLines={1}>{item.name || 'Unnamed'}</Text>
-          <Text style={styles.userAid}>{item.aid || '---'}</Text>
+          <Text style={styles.userAid}>{item.aid || '---'} • {item.country || 'N/A'}</Text>
         </View>
 
         <View style={styles.statBox}>

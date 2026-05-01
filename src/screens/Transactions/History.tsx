@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
-import { ArrowUpRight, ArrowDownLeft, Filter, Search } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownLeft, Filter, Search, Clock } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useWalletStore } from '../../store/useWalletStore';
 import { AppCard } from '../../components/ui/AppCard';

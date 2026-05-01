@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, Image, Alert } from 'react-native';
-import { Wallet, ArrowUpRight, ArrowDownLeft, Landmark, User, History, Repeat, Bell, ShieldCheck, ChevronRight, LogOut, LayoutDashboard, ShoppingBag, Clock, RefreshCcw, XCircle } from 'lucide-react-native';
+import { Wallet, ArrowUp, ArrowDown, Landmark, User as UserIcon, History, Repeat, Bell, ShieldCheck, ChevronRight, LogOut, LayoutDashboard, ShoppingBag, Clock, RefreshCcw, XCircle, Copy, CheckCircle2 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import * as Clipboard from 'expo-clipboard';
 import { useWalletStore } from '../../store/useWalletStore';
 import { AppCard } from '../../components/ui/AppCard';
 import { AppButton } from '../../components/ui/AppButton';
@@ -15,22 +16,21 @@ interface Props {
 }
 
 const Dashboard = ({ navigation }: Props) => {
-  const { 
-    balance = 0, 
-    userCountry = 'Ghana', 
-    availableCountries = [], 
-    transactions = [], 
-    toggleMerchantMode, 
-    toggleAdminMode, 
-    isKYCVerified = false, 
-    userProfile, 
-    signOut, 
-    merchantStatus = 'none', 
-    isAdmin = false, 
-    ongoingUserTransactions = [],
-    notifications = [], 
-    resetMerchantStatus 
-  } = useWalletStore();
+  const balance = useWalletStore(state => state.balance) || 0;
+  const userCountry = useWalletStore(state => state.userCountry) || 'Ghana';
+  const availableCountries = useWalletStore(state => state.availableCountries) || [];
+  const transactions = useWalletStore(state => state.transactions) || [];
+  const toggleMerchantMode = useWalletStore(state => state.toggleMerchantMode);
+  const toggleAdminMode = useWalletStore(state => state.toggleAdminMode);
+  const isKYCVerified = useWalletStore(state => state.isKYCVerified) || false;
+  const userProfile = useWalletStore(state => state.userProfile);
+  const kycStatus = useWalletStore(state => state.kycStatus);
+  const signOut = useWalletStore(state => state.signOut);
+  const merchantStatus = useWalletStore(state => state.merchantStatus) || 'none';
+  const isAdmin = useWalletStore(state => state.isAdmin) || false;
+  const ongoingUserTransactions = useWalletStore(state => state.ongoingUserTransactions) || [];
+  const notifications = useWalletStore(state => state.notifications) || [];
+  const resetMerchantStatus = useWalletStore(state => state.resetMerchantStatus);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -131,7 +131,7 @@ const Dashboard = ({ navigation }: Props) => {
                 onPress={() => setIsMenuOpen(!isMenuOpen)}
                 className="w-10 h-10 rounded-full border border-slate-700 items-center justify-center bg-surface overflow-hidden"
               >
-                <User color={isMenuOpen ? "#76b33a" : "#94A3B8"} size={20} />
+                <UserIcon color={isMenuOpen ? "#76b33a" : "#94A3B8"} size={20} />
               </TouchableOpacity>
 
               {/* Profile Dropdown Menu */}
@@ -144,7 +144,15 @@ const Dashboard = ({ navigation }: Props) => {
                 >
                   <View className="mb-4 pb-4 border-b border-slate-50">
                     <Text className="text-slate-900 font-bold text-lg">{userProfile?.name || 'User'}</Text>
-                    <Text className="text-accent text-[10px] font-bold uppercase tracking-widest mt-1">AID: {userProfile?.aid || '...'}</Text>
+                    <View className="flex-row items-center mt-1">
+                      <Text className="text-accent text-[10px] font-bold uppercase tracking-widest mr-2">AID: {userProfile?.aid || '...'}</Text>
+                      <TouchableOpacity onPress={async () => {
+                        await Clipboard.setStringAsync(userProfile?.aid || '');
+                        Alert.alert('Copied!', 'Your A-Transfer Account ID has been copied.');
+                      }}>
+                        <Copy color="#76b33a" size={14} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
 
                   <TouchableOpacity 
@@ -154,7 +162,7 @@ const Dashboard = ({ navigation }: Props) => {
                       navigation.navigate('Profile' as any);
                     }}
                   >
-                    <User color="#64748B" size={16} />
+                    <UserIcon color="#64748B" size={16} />
                     <Text className="text-slate-600 text-sm font-medium ml-3">View Profile</Text>
                   </TouchableOpacity>
 
@@ -216,6 +224,58 @@ const Dashboard = ({ navigation }: Props) => {
             </View>
           </View>
         </View>
+        
+        {/* KYC Status Banners */}
+        {kycStatus === 'pending' && (
+          <Animated.View entering={FadeInUp} className="mb-6">
+            <View className="bg-orange/10 p-5 rounded-[28px] border border-orange/20 flex-row items-center">
+              <View className="w-12 h-12 rounded-2xl bg-orange/20 items-center justify-center mr-4">
+                <Clock color="#df7c27" size={24} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-orange font-bold text-base">KYC in Progress</Text>
+                <Text className="text-textSecondary text-[10px] mt-1">Your identity documents are being verified. This usually takes 2-4 hours.</Text>
+              </View>
+            </View>
+          </Animated.View>
+        )}
+
+        {kycStatus === 'rejected' && (
+          <Animated.View entering={FadeInUp} className="mb-6">
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('IdentityVerification' as any)}
+              className="bg-red-500/10 p-5 rounded-[28px] border border-red-500/20 flex-row items-center"
+            >
+              <View className="w-12 h-12 rounded-2xl bg-red-500/20 items-center justify-center mr-4">
+                <RefreshCcw color="#EF4444" size={24} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-red-500 font-bold text-lg">KYC Rejected</Text>
+                <Text className="text-red-500/70 text-xs mt-1">
+                  {userProfile?.kycRejectionReason || 'Identity verification failed. Tap to re-upload.'}
+                </Text>
+              </View>
+              <ChevronRight color="#EF4444" size={20} />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
+        {kycStatus === 'approved' && !isBannerDismissed && (
+          <Animated.View entering={FadeInUp} exiting={FadeOutUp} className="mb-6">
+            <View className="bg-accent/10 p-5 rounded-[28px] border border-accent/20 flex-row items-center">
+              <View className="w-12 h-12 rounded-2xl bg-accent/20 items-center justify-center mr-4">
+                <CheckCircle2 color="#76b33a" size={24} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-accent font-bold text-base">KYC Approved ✅</Text>
+                <Text className="text-textSecondary text-[10px] mt-1">Your account is fully verified! You can now access all premium features.</Text>
+              </View>
+              <TouchableOpacity onPress={() => setIsBannerDismissed(true)}>
+                <XCircle color="#76b33a" size={20} />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        )}
 
         {/* The Branded A-Wallet Card */}
         <AppCard variant="gradient" className="mb-6 py-4 relative">
@@ -236,32 +296,39 @@ const Dashboard = ({ navigation }: Props) => {
             <View className="flex-row items-baseline">
               <Text className="text-accent text-xl font-bold mr-2">A</Text>
               <Text className="text-textPrimary text-4xl font-bold tracking-tighter">
-                {balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {(balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </Text>
             </View>
             <Text className="text-textSecondary text-xs mt-0.5 font-medium italic">
-               ≈ {currencySymbol}{localEquivalent.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currencyCode}
+               ≈ {currencySymbol}{(localEquivalent || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} {currencyCode}
             </Text>
           </View>
           
           <View className="flex-row justify-between">
             <AppButton 
               title="Deposit" 
-              variant="accent" 
+              variant="secondary" 
               className="flex-1 mr-2 border-accent/20"
-              onPress={() => navigation.navigate('SelectCountry', { mode: 'deposit' })}
-              icon={<ArrowUpRight color="#76b33a" size={18} />} 
+              onPress={() => navigation.navigate('AMerchants', { country: userCountry, mode: 'deposit' })}
+              icon={<ArrowDown color="#76b33a" size={18} />} 
               size="medium"
             />
             <AppButton 
               title="Withdraw" 
-              variant="orange" 
-              className="flex-1 ml-2 border-orange/20"
+              variant="secondary" 
+              className="flex-1 ml-2 border-slate-800"
               onPress={() => navigation.navigate('SelectCountry', { mode: 'withdraw' })}
-              icon={<ArrowDownLeft color="#df7c27" size={18} />} 
+              icon={<ArrowUp color="#EF4444" size={18} />} 
               size="medium"
             />
           </View>
+
+          <TouchableOpacity 
+            className="mt-6 flex-row items-center justify-center"
+            onPress={() => navigation.navigate('InternalTransfer')}
+          >
+            <Text className="text-textSecondary text-sm font-medium text-[#76b33a] underline">Transfer A-Credit to A-Transfer User</Text>
+          </TouchableOpacity>
         </AppCard>
 
         {/* Quick Transfer Primary Action */}
@@ -362,8 +429,8 @@ const Dashboard = ({ navigation }: Props) => {
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6 mb-10">
           {[
-            { icon: <ArrowDownLeft color="#df7c27" size={22} />, label: 'Request', action: () => navigation.navigate('RequestFunds' as any) },
-            { icon: <ArrowUpRight color="#76b33a" size={22} />, label: 'Send', action: () => navigation.navigate('SelectCountry', { mode: 'transfer' }) },
+            { icon: <ArrowDown color="#76b33a" size={22} />, label: 'Request', action: () => navigation.navigate('RequestFunds' as any) },
+            { icon: <ArrowUp color="#EF4444" size={22} />, label: 'Send', action: () => navigation.navigate('SelectCountry', { mode: 'transfer' }) },
             { icon: <History color="#94a3b8" size={22} />, label: 'History', action: () => (navigation as any).navigate('History') },
             { icon: <ShieldCheck color="#76b33a" size={22} />, label: 'Safety' },
           ].map((item, index) => (
@@ -398,8 +465,8 @@ const Dashboard = ({ navigation }: Props) => {
             >
               <View className={`w-14 h-14 rounded-2xl items-center justify-center mr-4 ${isOutbound ? 'bg-red-500/10' : 'bg-accent/10'}`}>
                 {isOutbound ? 
-                  <ArrowUpRight color="#EF4444" size={24} /> : 
-                  <ArrowDownLeft color="#76b33a" size={24} />
+                  <ArrowUp color="#EF4444" size={24} /> : 
+                  <ArrowDown color="#76b33a" size={24} />
                 }
               </View>
               <View className="flex-1">

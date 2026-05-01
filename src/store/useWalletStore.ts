@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+import { Platform } from 'react-native';
 import { auth, db } from '../config/firebase';
+import { sendPushNotificationToUser, sendLocalNotificationSafe } from '../utils/notifications';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -17,8 +19,9 @@ import {
   query,
   where,
   addDoc,
+  runTransaction,
   increment,
-  runTransaction
+  writeBatch
 } from 'firebase/firestore';
 
 const PAYSTACK_PUBLIC_KEY = 'pk_test_6e29eb50662592ed6fb7b98beb8ccfc82127f105';
@@ -80,6 +83,7 @@ interface WalletState {
   isAdminMode: boolean;
   userProfile: { name: string, email: string, aid: string, phone: string, country: string, sellingRate?: number, buyingRate?: number } | null;
   merchantStatus: 'none' | 'pending' | 'approved' | 'declined';
+  kycStatus: 'none' | 'pending' | 'approved' | 'rejected';
   activeTransaction: any | null;
   ongoingUserTransactions: any[];
   pendingRequests: any[];
@@ -94,7 +98,7 @@ interface WalletState {
   merchantTransactions: any[];
   ongoingMerchantTransactions: any[];
   // Actions
-  completeKYC: () => void;
+  completeKYC: (docs: { idUrl: string, selfieUrl: string }) => Promise<void>;
   increaseInventory: (amount: number) => void;
   depositFromMerchant: (amount: number, merchantId: string) => void;
   withdrawToMerchant: (amount: number, merchantId: string) => void;
@@ -110,12 +114,26 @@ interface WalletState {
   handleCancellationResponse: (txId: string, approved: boolean) => Promise<void>;
   createRequest: (recipientAid: string, amount: number) => void;
   initializeAuth: () => void;
-  applyForMerchant: (data: { businessName: string, ownerName: string, phone: string, email: string }) => Promise<void>;
+  applyForMerchant: (data: { 
+    businessName: string, 
+    ownerName: string, 
+    phone: string, 
+    email: string, 
+    country: string,
+    firstName: string,
+    lastName: string,
+    documents: {
+      idUrl: string,
+      certUrl: string,
+      selfieUrl: string
+    }
+  }) => Promise<void>;
+
   // Admin Actions
   fetchAllUsers: () => Promise<any[]>;
   updateMerchantBuyLimits: (min: number, max: number) => Promise<void>;
   updateMerchantSellMin: (min: number) => Promise<void>;
-  updateUserStatus: (uid: string, updates: Partial<Merchant>) => Promise<void>;
+  updateUserStatus: (uid: string, updates: any) => Promise<void>;
   allocateCredits: (uid: string, amount: number, type: 'balance' | 'inventory') => Promise<void>;
   updateGlobalSettings: (updates: any) => Promise<void>;
   fetchUserTransactions: (uid: string) => Promise<any[]>;
@@ -124,7 +142,9 @@ interface WalletState {
   fetchAllTransactions: () => Promise<any[]>;
   updateMerchantRate: (rate: number) => Promise<void>;
   updateMerchantBuyRate: (rate: number) => Promise<void>;
+  handleKYCResponse: (uid: string, approved: boolean) => Promise<void>;
 }
+
 
 const MOCK_TRANSACTIONS: Transaction[] = [
   { id: '1', name: 'A-Merchant: Kwame Transfer', amount: '-A 200.00', date: 'Sept 14, 2026', status: 'In Escrow', type: 'outbound' },
@@ -168,6 +188,8 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   notifications: [],
   merchantTransactions: [],
   ongoingMerchantTransactions: [],
+  activeTransaction: null,
+  ongoingUserTransactions: [],
   systemSettings: {
     exchangeRates: {
       'Ghana': 12.5,
@@ -187,10 +209,27 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     maintenanceMode: false
   },
   
-  completeKYC: () => set({ isKYCVerified: true }),
+  completeKYC: async (docs) => {
+    if (auth.currentUser) {
+      try {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+          kycStatus: 'pending',
+          kycDocuments: {
+            ...docs,
+            submittedAt: new Date().toISOString()
+          }
+        });
+        set({ isKYCVerified: false }); // It's pending, not yet verified
+      } catch (error) {
+        console.error('Error submitting KYC:', error);
+        throw error;
+      }
+    }
+  },
+
   increaseInventory: async (amount: number) => {
-    const state = useWalletStore.getState();
-    const newInventory = state.merchantInventory + amount;
+    const { merchantInventory } = get();
+    const newInventory = merchantInventory + amount;
     
     set({ merchantInventory: newInventory });
     
@@ -205,8 +244,6 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       }
     }
   },
-  depositFromMerchant: () => {},
-  withdrawToMerchant: () => {},
   setUserCountry: (countryName) => set({ userCountry: countryName }),
   toggleMerchantMode: () => set((state) => ({ isMerchantMode: !state.isMerchantMode })),
   toggleAdminMode: () => set((state) => ({ isAdminMode: !state.isAdminMode })),
@@ -277,6 +314,19 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           preCancellationStatus: oldStatus,
           cancellationRequestedAt: new Date().toISOString()
         });
+
+        // Notify merchant
+        if (snap.data().merchantId) {
+          const notifRef = doc(collection(db, 'users', snap.data().merchantId, 'notifications'));
+          await setDoc(notifRef, {
+            id: notifRef.id,
+            title: 'Cancellation Requested',
+            message: `${snap.data().userName || 'A user'} has requested to cancel the active transaction.`,
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            type: 'warning'
+          });
+        }
       }
     } catch (error) {
       console.error('Error requesting cancellation:', error);
@@ -303,9 +353,31 @@ export const useWalletStore = create<WalletState>((set, get) => ({
             }
           }
           transaction.update(txRef, { status: 'cancelled', cancelledAt: new Date().toISOString(), inEscrow: false });
+          
+          // Notify user
+          const notifRef = doc(collection(db, 'users', txData.userId, 'notifications'));
+          transaction.set(notifRef, {
+            id: notifRef.id,
+            title: 'Cancellation Approved',
+            message: `Merchant ${get().userProfile?.name || 'A-Merchant'} has approved the cancellation of your order.`,
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            type: 'info'
+          });
         } else {
           const revertStatus = txData.preCancellationStatus || 'awaiting_confirmation';
           transaction.update(txRef, { status: revertStatus, cancellationDeniedAt: new Date().toISOString() });
+
+          // Notify user
+          const notifRef = doc(collection(db, 'users', txData.userId, 'notifications'));
+          transaction.set(notifRef, {
+            id: notifRef.id,
+            title: 'Cancellation Denied',
+            message: `Merchant ${get().userProfile?.name || 'A-Merchant'} has denied the cancellation of your order.`,
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            type: 'error'
+          });
         }
       });
     } catch (error) {
@@ -426,6 +498,14 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       };
       const docRef = doc(db, 'ongoing_transactions', txId);
       await setDoc(docRef, transaction);
+      
+      // Ping the merchant
+      sendPushNotificationToUser(
+        merchantId, 
+        'New P2P Request! 💰', 
+        `${transaction.userName} wants to send you A ${amount}`
+      );
+
       return txId;
     } catch (error: any) {
       console.error('STORE ERROR:', error);
@@ -476,6 +556,16 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         transaction.update(userRef, { balance: increment(amount) });
         transaction.update(txRef, { status: 'completed', completedAt: new Date().toISOString() });
       });
+
+      // Fetch txData again to get the latest info for push notification
+      const txRefFinal = doc(db, 'ongoing_transactions', txId);
+      const txSnapFinal = await getDoc(txRefFinal);
+      if (txSnapFinal.exists()) {
+        const { userId, merchantId, amount } = txSnapFinal.data();
+        // Notify the user that their money arrived
+        sendPushNotificationToUser(userId, 'Transfer Complete ✅', `Your A ${amount} has been successfully credited!`);
+      }
+
     } catch (error: any) {
       console.error('CRITICAL TRANSACTION ERROR:', error);
       throw error;
@@ -537,6 +627,49 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     }
   },
 
+  handleKYCResponse: async (uid: string, approved: boolean, reason?: string) => {
+    try {
+      const userRef = doc(db, 'users', uid);
+      const notifRef = doc(collection(db, 'users', uid, 'notifications'));
+      
+      const batch = writeBatch(db);
+      
+      // Update User KYC Status
+      batch.update(userRef, {
+        isKYCVerified: approved ? true : false,
+        kycStatus: approved ? 'approved' : 'rejected',
+        kycRejectionReason: !approved ? (reason || 'Document verification failed') : null
+      });
+      
+      // Send Notification
+      batch.set(notifRef, {
+        id: notifRef.id,
+        title: approved ? 'KYC Approved ✅' : 'KYC Rejected ❌',
+        message: approved 
+          ? 'Congratulations! Your identity has been verified. You now have full access to all premium features.' 
+          : `Your identity verification was rejected. Reason: ${reason || 'Document verification failed. Please try again.'}`,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        type: approved ? 'success' : 'error'
+      });
+      
+      await batch.commit();
+      
+      // Also send a real push notification if possible
+      sendPushNotificationToUser(
+        uid, 
+        approved ? 'KYC Approved ✅' : 'KYC Rejected ❌',
+        approved ? 'Your identity has been verified!' : `Verification failed: ${reason || 'Check your documents'}`,
+        approved ? 'success' : 'error'
+      );
+      
+      console.log(`KYC response for ${uid}: ${approved ? 'Approved' : 'Rejected'}`);
+    } catch (e: any) {
+      console.error('Error handling KYC response:', e);
+      throw e;
+    }
+  },
+
   updateUserStatus: async (uid, updates) => {
     try {
       await updateDoc(doc(db, 'users', uid), updates);
@@ -557,6 +690,15 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           isRead: false,
           type: updates.merchantStatus === 'approved' ? 'success' : 'error'
         });
+
+        // Also send a real push notification
+        sendPushNotificationToUser(
+          uid, 
+          title,
+          message,
+          updates.merchantStatus === 'approved' ? 'success' : 'error'
+        );
+        
         console.log('[NOTIFY] Notification document added successfully');
       }
     } catch (error) {
@@ -653,6 +795,9 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           // Fallback to mock settings if permission denied
           set({ systemSettings: {
             exchangeRates: { 'Ghana': 12.5, 'Nigeria': 1150, 'Kenya': 155, 'South Africa': 19.2 },
+            merchantBuyRate: 1.0,
+            merchantSellRange: { min: 1.2, max: 1.7 },
+            merchantBuyRange: { min: 0.8, max: 1.0 },
             maintenanceMode: false
           }});
         });
@@ -696,6 +841,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
               merchantEarnings: data.merchantEarnings || 0,
               userCountry: data.country || 'Ghana',
               isKYCVerified: data.isKYCVerified || false,
+              kycStatus: data.kycStatus || 'none',
               merchantStatus: data.merchantStatus || 'none',
               isAcceptingBuy: data.isAcceptingBuy ?? true,
               isAcceptingSell: data.isAcceptingSell ?? true,
@@ -764,10 +910,39 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
         // Listen to notifications
         const qNotify = collection(db, 'users', user.uid, 'notifications');
+        let isFirstLoad = true;
+        
         unsubscribeNotifications = onSnapshot(qNotify, (snapshot) => {
           const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification));
+          
           // Sort newest first
           notes.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          
+          // If not first load, check for new notifications to trigger local popup
+          if (!isFirstLoad) {
+            snapshot.docChanges().forEach((change) => {
+              if (change.type === 'added') {
+                const newNotif = change.doc.data() as AppNotification;
+                console.log('--- NEW NOTIFICATION DETECTED ---', newNotif.title);
+                
+                // Only trigger if it's less than 1 minute old to avoid re-triggering old ones
+                const notifTime = new Date(newNotif.timestamp).getTime();
+                const now = new Date().getTime();
+                
+                if (now - notifTime < 60000 && Platform.OS !== 'web') {
+                  console.log('--- TRIGGERING LOCAL POPUP ---');
+                  sendLocalNotificationSafe(newNotif.title, newNotif.message);
+                } else {
+                  console.log('--- NOTIFICATION TOO OLD OR ON WEB ---', { 
+                    age: now - notifTime, 
+                    os: Platform.OS 
+                  });
+                }
+              }
+            });
+          }
+          
+          isFirstLoad = false;
           set({ notifications: notes });
         });
       } else {

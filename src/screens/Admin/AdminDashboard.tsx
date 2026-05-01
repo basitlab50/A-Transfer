@@ -23,7 +23,7 @@ import {
   LayoutDashboard,
   LogOut,
   ChevronDown,
-  User
+  User as UserIcon
 } from 'lucide-react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 import { AppCard } from '../../components/ui/AppCard';
@@ -34,7 +34,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const AdminDashboard = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
-  const { fetchAllUsers, updateUserStatus, allocateCredits, systemSettings, updateGlobalSettings, toggleAdminMode } = useWalletStore();
+  
+  const fetchAllUsers = useWalletStore(state => state.fetchAllUsers);
+  const updateUserStatus = useWalletStore(state => state.updateUserStatus);
+  const allocateCredits = useWalletStore(state => state.allocateCredits);
+  const systemSettings = useWalletStore(state => state.systemSettings);
+  const updateGlobalSettings = useWalletStore(state => state.updateGlobalSettings);
+  const toggleAdminMode = useWalletStore(state => state.toggleAdminMode);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -196,7 +202,7 @@ const AdminDashboard = ({ navigation }: any) => {
               style={{ flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 20, backgroundColor: '#0A192F', marginBottom: 8 }}
             >
               <View className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center mr-4">
-                <User color="#94A3B8" size={20} />
+                <UserIcon color="#94A3B8" size={20} />
               </View>
               <View>
                 <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>Switch to User Mode</Text>
@@ -224,7 +230,7 @@ const AdminDashboard = ({ navigation }: any) => {
           <Text className="text-textSecondary text-xs font-bold uppercase tracking-widest mb-4">Pending Approvals</Text>
           <TouchableOpacity 
             onPress={() => navigation.navigate('AdminMerchantRequests')}
-            className="bg-surface p-6 rounded-[32px] border border-slate-800 flex-row items-center justify-between"
+            className="bg-surface p-6 rounded-[32px] border border-slate-800 flex-row items-center justify-between mb-4"
           >
             <View className="flex-row items-center">
               <View className="w-12 h-12 rounded-2xl bg-yellow-500/10 items-center justify-center mr-4">
@@ -237,6 +243,24 @@ const AdminDashboard = ({ navigation }: any) => {
             </View>
             <View className="bg-primary p-2 rounded-full">
               <ChevronRight color="#eab308" size={20} />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('AdminUserRequests')}
+            className="bg-surface p-6 rounded-[32px] border border-slate-800 flex-row items-center justify-between"
+          >
+            <View className="flex-row items-center">
+              <View className="w-12 h-12 rounded-2xl bg-blue-500/10 items-center justify-center mr-4">
+                <UserIcon color="#3b82f6" size={24} />
+              </View>
+              <View>
+                <Text className="text-textPrimary font-bold text-lg">User Requests</Text>
+                <Text className="text-textSecondary text-xs">Review and verify user KYC data</Text>
+              </View>
+            </View>
+            <View className="bg-primary p-2 rounded-full">
+              <ChevronRight color="#3b82f6" size={20} />
             </View>
           </TouchableOpacity>
         </View>

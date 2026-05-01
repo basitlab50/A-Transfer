@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator,
 import { 
   ArrowLeft, 
   Search, 
-  ShoppingBag, 
+  User as UserIcon, 
   ChevronRight,
   ShieldCheck,
   Clock,
@@ -12,11 +12,9 @@ import {
 import { useWalletStore } from '../../store/useWalletStore';
 
 /**
- * ULTRA-SAFE VERSION
- * No NativeWind, no Animations.
- * Just standard View and style props to prevent blank screens.
+ * ULTRA-SAFE VERSION for User KYC Requests
  */
-const AdminMerchantRequests = ({ route, navigation }: any) => {
+const AdminUserRequests = ({ route, navigation }: any) => {
   const countryParam = route.params?.country;
   const fetchAllUsers = useWalletStore(state => state.fetchAllUsers);
   const availableCountries = useWalletStore(state => state.availableCountries);
@@ -37,13 +35,13 @@ const AdminMerchantRequests = ({ route, navigation }: any) => {
       setAllUsers(users);
       
       if (countryParam) {
-        // Filter by country and anyone who has an application
+        // Filter by country and anyone who has pending KYC
         const requests = users.filter((u: any) => 
-          u.country === countryParam && u.merchantApplication
+          u.country === countryParam && u.kycStatus === 'pending'
         );
         setData(requests);
       } else {
-        setData([]); // Reset if no country
+        setData([]); 
       }
     } catch (err) {
       console.error('Load Error:', err);
@@ -60,7 +58,7 @@ const AdminMerchantRequests = ({ route, navigation }: any) => {
   const renderCountrySelection = () => {
     // Group pending applications by country
     const pendingByCountry = allUsers.reduce((acc: any, user: any) => {
-      if (user.merchantStatus === 'pending') {
+      if (user.kycStatus === 'pending') {
         const c = user.country || 'Unknown';
         acc[c] = (acc[c] || 0) + 1;
       }
@@ -73,26 +71,26 @@ const AdminMerchantRequests = ({ route, navigation }: any) => {
       <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
         {pendingCountries.length > 0 && (
           <View style={{ marginTop: 20 }}>
-            <Text style={styles.sectionTitle}>URGENT: PENDING APPLICATIONS</Text>
+            <Text style={styles.sectionTitle}>PENDING KYC VERIFICATIONS</Text>
             {pendingCountries.map(countryName => {
               const countryInfo = availableCountries.find(c => c.name === countryName);
               return (
                 <TouchableOpacity 
                   key={countryName}
-                  onPress={() => navigation.navigate('AdminMerchantRequests', { country: countryName })}
+                  onPress={() => navigation.navigate('AdminUserRequests', { country: countryName })}
                   style={styles.alertBanner}
                 >
                   <View style={styles.alertIcon}>
-                    <Clock color="#eab308" size={16} />
+                    <ShieldCheck color="#3b82f6" size={16} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={styles.alertText}>
-                      New application from <Text style={{ fontWeight: 'bold' }}>{countryName}</Text>
+                      KYC Review for <Text style={{ fontWeight: 'bold' }}>{countryName}</Text>
                     </Text>
-                    <Text style={{ color: '#94A3B8', fontSize: 9 }}>{pendingByCountry[countryName]} pending review</Text>
+                    <Text style={{ color: '#94A3B8', fontSize: 9 }}>{pendingByCountry[countryName]} pending verification</Text>
                   </View>
-                  <Text style={{ color: '#eab308', fontSize: 18 }}>{countryInfo?.flag}</Text>
-                  <ChevronRight color="#eab308" size={16} style={{ marginLeft: 10 }} />
+                  <Text style={{ color: '#3b82f6', fontSize: 18 }}>{countryInfo?.flag}</Text>
+                  <ChevronRight color="#3b82f6" size={16} style={{ marginLeft: 10 }} />
                 </TouchableOpacity>
               );
             })}
@@ -104,13 +102,13 @@ const AdminMerchantRequests = ({ route, navigation }: any) => {
           {availableCountries.map((country) => (
             <TouchableOpacity 
               key={country.name}
-              onPress={() => navigation.navigate('AdminMerchantRequests', { country: country.name })}
+              onPress={() => navigation.navigate('AdminUserRequests', { country: country.name })}
               style={styles.countryCard}
             >
               <Text style={{ fontSize: 40, marginBottom: 10 }}>{country.flag}</Text>
               <Text style={styles.countryName}>{country.name}</Text>
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>VIEW APPS</Text>
+                <Text style={styles.badgeText}>VIEW USERS</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -127,11 +125,11 @@ const AdminMerchantRequests = ({ route, navigation }: any) => {
             <ArrowLeft color="#F8FAFC" size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {countryParam ? countryParam : 'Merchant Portal'}
+            {countryParam ? `KYC: ${countryParam}` : 'User Requests'}
           </Text>
         </View>
         <TouchableOpacity onPress={() => navigation.navigate('Dashboard')} style={styles.iconBtn}>
-          <Home color="#eab308" size={24} />
+          <Home color="#3b82f6" size={24} />
         </TouchableOpacity>
       </View>
 
@@ -140,7 +138,7 @@ const AdminMerchantRequests = ({ route, navigation }: any) => {
           <Search color="#94A3B8" size={20} />
           <TextInput 
             style={styles.searchInput}
-            placeholder="Search applications..."
+            placeholder="Search users..."
             placeholderTextColor="#475569"
             value={search}
             onChangeText={setSearch}
@@ -165,21 +163,21 @@ const AdminMerchantRequests = ({ route, navigation }: any) => {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
           <Clock color="#94A3B8" size={10} />
           <Text style={styles.dateText}>
-            Applied: {item.merchantApplication?.submittedAt?.split('T')[0] || 'N/A'}
+            Submitted: {item.kycDocuments?.submittedAt?.split('T')[0] || 'N/A'}
           </Text>
         </View>
       </View>
 
       <View style={{ alignItems: 'flex-end' }}>
         <View style={[styles.statusBadge, { 
-          backgroundColor: item.merchantStatus === 'approved' ? '#76b33a22' : 
-                          item.merchantStatus === 'declined' ? '#ef444422' : '#eab30822'
+          backgroundColor: item.kycStatus === 'approved' ? '#76b33a22' : 
+                          item.kycStatus === 'rejected' ? '#ef444422' : '#3b82f622'
         }]}>
           <Text style={[styles.statusText, { 
-            color: item.merchantStatus === 'approved' ? '#76b33a' : 
-                   item.merchantStatus === 'declined' ? '#ef4444' : '#eab308'
+            color: item.kycStatus === 'approved' ? '#76b33a' : 
+                   item.kycStatus === 'rejected' ? '#ef4444' : '#3b82f6'
           }]}>
-            {item.merchantStatus || 'Pending'}
+            {item.kycStatus || 'Pending'}
           </Text>
         </View>
         <ChevronRight color="#475569" size={16} style={{ marginTop: 8 }} />
@@ -206,8 +204,8 @@ const AdminMerchantRequests = ({ route, navigation }: any) => {
           contentContainerStyle={{ paddingBottom: 40 }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <ShoppingBag color="#1e293b" size={60} />
-              <Text style={styles.emptyText}>No applications found for this region.</Text>
+              <UserIcon color="#1e293b" size={60} />
+              <Text style={styles.emptyText}>No KYC requests found for this region.</Text>
             </View>
           }
         />
@@ -280,7 +278,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   badgeText: {
-    color: '#eab308',
+    color: '#3b82f6',
     fontSize: 9,
     fontWeight: 'bold',
   },
@@ -361,18 +359,18 @@ const styles = StyleSheet.create({
   alertBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#eab30811',
+    backgroundColor: '#3b82f611',
     padding: 15,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#eab30833',
+    borderColor: '#3b82f633',
     marginBottom: 10,
   },
   alertIcon: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: '#eab30822',
+    backgroundColor: '#3b82f622',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -382,4 +380,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default AdminMerchantRequests;
+export default AdminUserRequests;

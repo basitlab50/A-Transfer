@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Alert, ActivityIndicator, Button } from 'react-native';
 import { useWalletStore } from '../../store/useWalletStore';
 import { db, auth } from '../../config/firebase';
-import { doc, setDoc, runTransaction, increment, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, increment, updateDoc, writeBatch, getDoc, collection } from 'firebase/firestore';
 import { ArrowRightLeft, ArrowRight, ShoppingBag, Landmark, Smartphone, CheckCircle2, Home, Clock, Info, Wallet, Landmark as BankIcon } from 'lucide-react-native';
+import { sendPushNotificationToUser } from '../../utils/notifications';
+
 
 const WithdrawAmount = ({ route, navigation }: any) => {
   const { merchant } = route.params || {};
@@ -137,6 +139,15 @@ const WithdrawAmount = ({ route, navigation }: any) => {
                 </Text>
               )}
             </View>
+            <View style={{ backgroundColor: 'rgba(118, 179, 58, 0.05)', padding: 20, borderRadius: 24, marginBottom: 25, borderWidth: 1, borderColor: 'rgba(118, 179, 58, 0.2)' }}>
+              <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 5 }}>Final Payout Amount</Text>
+              <Text style={{ color: '#F8FAFC', fontSize: 24, fontWeight: 'bold' }}>
+                {currencySymbol}{localPayout.toLocaleString()} {currencyCode}
+              </Text>
+              <Text style={{ color: '#76b33a', fontSize: 11, marginTop: 4 }}>
+                ≈ A {creditsToSell.toFixed(2)} to be deducted
+              </Text>
+            </View>
 
             <TouchableOpacity 
               disabled={!inputValue || parseFloat(inputValue) === 0 || isOutOfRange || isInsufficient}
@@ -219,34 +230,60 @@ const WithdrawAmount = ({ route, navigation }: any) => {
                   const payoutDetails = payoutType === 'bank' ? { type: 'bank', bankName, accountNo, accountName } : { type: 'momo', momoProvider, momoNumber, momoName: momoName || userProfile?.name || 'User' };
                   const amt = Number(creditsToSell);
 
-                  await runTransaction(db, async (transaction) => {
-                    const uRef = doc(db, 'users', auth.currentUser!.uid);
-                    const uSnap = await transaction.get(uRef);
-                    if (!uSnap.exists()) throw new Error('User not found');
-                    const currentBalance = uSnap.data().balance || 0;
-                    if (currentBalance < amt) throw new Error('Insufficient balance');
+                  const uRef = doc(db, 'users', auth.currentUser!.uid);
+                  const uSnap = await getDoc(uRef);
+                  if (!uSnap.exists()) throw new Error('User not found');
+                  const currentBalance = uSnap.data().balance || 0;
+                  if (currentBalance < amt) throw new Error('Insufficient balance');
 
-                    const txData = { 
-                      userId: auth.currentUser?.uid || 'anonymous', 
-                      userName: userProfile?.name || 'User', 
-                      merchantId: merchant.id, 
-                      amount: amt, 
-                      localAmount: localPayout, 
-                      currencyCode, 
-                      status: 'awaiting_merchant_payment', 
-                      timestamp: new Date().toISOString(), 
-                      type: 'withdraw', 
-                      senderCountry: 'A-Wallet',
-                      destinationCountry: merchant.country,
-                      senderCurrency: 'A-Credit',
-                      recipientCurrency: currencyCode,
-                      payoutDetails,
-                      inEscrow: true 
-                    };
+                  const batch = writeBatch(db);
 
-                    transaction.update(uRef, { balance: increment(-amt) });
-                    transaction.set(doc(db, 'ongoing_transactions', txId), txData);
+                  const txData = { 
+                    userId: auth.currentUser?.uid || 'anonymous', 
+                    userName: userProfile?.name || 'User', 
+                    merchantId: merchant.id, 
+                    amount: amt, 
+                    localAmount: localPayout, 
+                    currencyCode, 
+                    status: 'awaiting_merchant_payment', 
+                    timestamp: new Date().toISOString(), 
+                    type: 'withdraw', 
+                    senderCountry: 'A-Wallet',
+                    destinationCountry: merchant.country,
+                    senderCurrency: 'A-Credit',
+                    recipientCurrency: currencyCode,
+                    payoutDetails,
+                    inEscrow: true,
+                    merchantBuyRate: merchantBuyRate
+                  };
+
+                  batch.update(uRef, { balance: increment(-amt) });
+                  batch.set(doc(db, 'ongoing_transactions', txId), txData);
+
+                  // Notify merchant
+                  const notifRef = doc(collection(db, 'users', merchant.id, 'notifications'));
+                  batch.set(notifRef, {
+                    id: notifRef.id,
+                    title: 'New Withdrawal Request',
+                    message: `${userProfile?.name || 'A user'} wants to withdraw A ${amt.toLocaleString()}.`,
+                    timestamp: new Date().toISOString(),
+                    isRead: false,
+                    type: 'info'
                   });
+                  
+                  // Notify user
+                  const userNotifRef = doc(collection(db, 'users', auth.currentUser!.uid, 'notifications'));
+                  batch.set(userNotifRef, {
+                    id: userNotifRef.id,
+                    title: 'Withdrawal Requested',
+                    message: `You have requested to withdraw A ${amt.toLocaleString()} via ${merchant.name}.`,
+                    timestamp: new Date().toISOString(),
+                    isRead: false,
+                    type: 'info'
+                  });
+
+
+                  await batch.commit();
 
                   setStep('success');
                 } catch (e: any) { 

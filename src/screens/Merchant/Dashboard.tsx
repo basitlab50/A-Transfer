@@ -9,7 +9,7 @@ import {
   ArrowDownLeft, 
   ChevronRight, 
   Bell, 
-  User, 
+  User as UserIcon, 
   ShieldCheck, 
   LogOut,
   Clock,
@@ -18,7 +18,8 @@ import {
   RefreshCcw,
   CreditCard,
   History,
-  Landmark
+  Landmark,
+  ArrowRightLeft
 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useWalletStore } from '../../store/useWalletStore';
@@ -29,7 +30,8 @@ import { TextInput, Alert } from 'react-native';
 const MerchantDashboard = ({ navigation }: any) => {
   const { 
     merchantInventory,
-    merchantEarnings, 
+    merchantEarnings,
+    merchantTransactions = [],
     isAcceptingBuy,
     isAcceptingSell,
     toggleBuyStatus,
@@ -60,6 +62,19 @@ const MerchantDashboard = ({ navigation }: any) => {
   const [showBuySuccess, setShowBuySuccess] = useState(false);
   const [showLimitSuccess, setShowLimitSuccess] = useState(false);
   const [showSellLimitSuccess, setShowSellLimitSuccess] = useState(false);
+  const [buyLimitsMode, setBuyLimitsMode] = useState<'a-credits' | 'local'>('a-credits');
+
+  const handleBuyLimitsModeToggle = () => {
+    if (buyLimitsMode === 'a-credits') {
+      setMinBuyLimit((parseFloat(minBuyLimit) * effectiveBuyRate).toFixed(2).replace(/\.00$/, ''));
+      setMaxBuyLimit((parseFloat(maxBuyLimit) * effectiveBuyRate).toFixed(2).replace(/\.00$/, ''));
+      setBuyLimitsMode('local');
+    } else {
+      setMinBuyLimit((parseFloat(minBuyLimit) / effectiveBuyRate).toFixed(2).replace(/\.00$/, ''));
+      setMaxBuyLimit((parseFloat(maxBuyLimit) / effectiveBuyRate).toFixed(2).replace(/\.00$/, ''));
+      setBuyLimitsMode('a-credits');
+    }
+  };
 
   const sellRateNum = parseFloat(mRate);
   const isSellRateValid = mRate === '' || (!isNaN(sellRateNum) && sellRateNum >= systemSettings.merchantSellRange.min && sellRateNum <= systemSettings.merchantSellRange.max);
@@ -79,7 +94,19 @@ const MerchantDashboard = ({ navigation }: any) => {
   const effectiveBuyRate = merchantBuyRate * baseRate;
 
   const localInventory = merchantInventory * effectiveSellRate;
-  const localEarnings = merchantEarnings * effectiveSellRate;
+  
+  // Calculate Today's Profit Dynamically
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todaysProfit = (merchantTransactions || [])
+    .filter((tx: any) => {
+      if (!tx.profitEarned) return false;
+      const txDate = new Date(tx.completedAt || tx.timestamp);
+      return txDate >= today;
+    })
+    .reduce((sum: number, tx: any) => sum + (tx.profitEarned || 0), 0);
+
+  const localEarnings = todaysProfit * effectiveSellRate;
   const localBalance = balance * effectiveSellRate;
 
   // Mock peer requests
@@ -109,7 +136,7 @@ const MerchantDashboard = ({ navigation }: any) => {
             </View>
             <Text className="text-textPrimary text-xl font-bold">Merchant Hub</Text>
             <Text className="text-textSecondary text-[10px] font-bold mt-1">
-              BALANCE: <Text className="text-accent">{currencySymbol}{localBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currencyCode}</Text>
+              BALANCE: <Text className="text-accent">{currencySymbol}{(localBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} {currencyCode}</Text>
             </Text>
           </View>
 
@@ -124,7 +151,7 @@ const MerchantDashboard = ({ navigation }: any) => {
                 onPress={() => setIsMenuOpen(!isMenuOpen)}
                 className="w-10 h-10 rounded-full border border-slate-700 items-center justify-center bg-surface"
               >
-                <User color={isMenuOpen ? "#76b33a" : "#94A3B8"} size={20} />
+                <UserIcon color={isMenuOpen ? "#76b33a" : "#94A3B8"} size={20} />
               </TouchableOpacity>
 
               {/* Profile Dropdown Menu */}
@@ -210,7 +237,7 @@ const MerchantDashboard = ({ navigation }: any) => {
               <View>
                 <Text className="text-textSecondary text-[10px] font-bold uppercase mb-1">Today's Profit</Text>
                 <View className="flex-row items-baseline">
-                  <Text className="text-accent font-bold text-lg">+A {merchantEarnings}</Text>
+                  <Text className="text-accent font-bold text-lg">+A {todaysProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                   <Text className="text-accent/60 text-[10px] ml-2 italic">
                     ({currencySymbol}{localEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                   </Text>
@@ -323,13 +350,19 @@ const MerchantDashboard = ({ navigation }: any) => {
           {isAcceptingSell && (
             <Animated.View entering={FadeInUp} className="mt-6 pt-6 border-t border-slate-800/50">
               <View className="flex-row justify-between items-center mb-4">
-                <Text className="text-textPrimary font-bold text-xs">Purchase Range (A-Credits)</Text>
+                <View className="flex-row items-center">
+                  <Text className="text-textPrimary font-bold text-xs mr-3">Purchase Range {buyLimitsMode === 'a-credits' ? '(A-Credits)' : `(${currencyCode})`}</Text>
+                  <TouchableOpacity onPress={handleBuyLimitsModeToggle} className="bg-slate-800/80 px-2 py-1 rounded-md flex-row items-center">
+                    <ArrowRightLeft color="#94A3B8" size={10} />
+                    <Text className="text-textSecondary text-[8px] font-bold ml-1 uppercase">Switch to {buyLimitsMode === 'local' ? 'A-Credits' : currencyCode}</Text>
+                  </TouchableOpacity>
+                </View>
                 {showLimitSuccess && <Text className="text-orange text-[8px] font-bold">LIMITS SAVED! ✨</Text>}
               </View>
               
               <View className="flex-row items-center space-x-3 mb-4">
                 <View className="flex-1 bg-primary border border-slate-800 rounded-xl px-3 py-1">
-                  <Text className="text-textSecondary text-[8px] uppercase font-bold mb-1">Min</Text>
+                  <Text className="text-textSecondary text-[8px] uppercase font-bold mb-1">Min {buyLimitsMode === 'local' ? currencySymbol : 'A'}</Text>
                   <TextInput 
                     value={minBuyLimit}
                     onChangeText={setMinBuyLimit}
@@ -340,7 +373,7 @@ const MerchantDashboard = ({ navigation }: any) => {
                   />
                 </View>
                 <View className="flex-1 bg-primary border border-slate-800 rounded-xl px-3 py-1">
-                  <Text className="text-textSecondary text-[8px] uppercase font-bold mb-1">Max</Text>
+                  <Text className="text-textSecondary text-[8px] uppercase font-bold mb-1">Max {buyLimitsMode === 'local' ? currencySymbol : 'A'}</Text>
                   <TextInput 
                     value={maxBuyLimit}
                     onChangeText={setMaxBuyLimit}
@@ -352,8 +385,14 @@ const MerchantDashboard = ({ navigation }: any) => {
                 </View>
                 <TouchableOpacity 
                   onPress={async () => {
-                    const min = parseFloat(minBuyLimit);
-                    const max = parseFloat(maxBuyLimit);
+                    let min = parseFloat(minBuyLimit);
+                    let max = parseFloat(maxBuyLimit);
+                    
+                    if (buyLimitsMode === 'local') {
+                      min = min / effectiveBuyRate;
+                      max = max / effectiveBuyRate;
+                    }
+
                     if (isNaN(min) || isNaN(max) || min >= max) {
                       Alert.alert('Invalid Limits', 'Please ensure min is less than max');
                       return;
@@ -376,8 +415,11 @@ const MerchantDashboard = ({ navigation }: any) => {
                 </TouchableOpacity>
               </View>
               <Text className="text-textSecondary text-[10px] italic">
-                Range: {currencySymbol}{(parseFloat(minBuyLimit) * effectiveBuyRate).toLocaleString()} - 
-                {currencySymbol}{(parseFloat(maxBuyLimit) * effectiveBuyRate).toLocaleString()} {currencyCode}
+                {buyLimitsMode === 'local' ? (
+                  `Range: A ${(parseFloat(minBuyLimit) / effectiveBuyRate).toLocaleString(undefined, { maximumFractionDigits: 2 })} - A ${(parseFloat(maxBuyLimit) / effectiveBuyRate).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                ) : (
+                  `Range: ${currencySymbol}{(parseFloat(minBuyLimit) * effectiveBuyRate).toLocaleString(undefined, { maximumFractionDigits: 2 })} - ${currencySymbol}{(parseFloat(maxBuyLimit) * effectiveBuyRate).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currencyCode}`
+                )}
               </Text>
             </Animated.View>
           )}
@@ -550,13 +592,13 @@ const MerchantDashboard = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        {useWalletStore.getState().merchantTransactions.length === 0 ? (
+        {merchantTransactions.length === 0 ? (
           <View className="bg-surface/40 p-8 rounded-[28px] border border-card-border/30 items-center">
             <Clock color="#475569" size={32} />
             <Text className="text-textSecondary text-sm mt-3 font-medium">No recent merchant activity</Text>
           </View>
         ) : (
-          useWalletStore.getState().merchantTransactions.slice(0, 3).map((tx: any) => {
+          merchantTransactions.slice(0, 3).map((tx: any) => {
             const isDeposit = tx.type === 'deposit';
             return (
               <TouchableOpacity 

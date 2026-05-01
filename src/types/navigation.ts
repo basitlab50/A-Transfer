@@ -22,11 +22,13 @@ export type RootStackParamList = {
   AdminDetailList: { type: 'users' | 'merchants' | 'circulation' };
   AdminUserDetails: { userId: string };
   AdminMerchantRequests: { country?: string };
+  AdminUserRequests: { country?: string };
   DepositAmount: { merchant: any };
   WithdrawAmount: { merchant: any };
   MerchantPaymentSettings: undefined;
   MerchantOngoingTransactions: undefined;
   TransactionStatus: { transactionId?: string };
+  TransactionChat: { transactionId: string; otherPartyName: string; otherPartyId: string };
   Receipt: { transaction: any };
   Notifications: undefined;
 };

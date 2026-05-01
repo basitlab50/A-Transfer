@@ -59,7 +59,7 @@ const AMerchants = ({ route, navigation }: Props) => {
       headerTitle: mode === 'deposit' ? 'Select Merchant (Buy)' : mode === 'withdraw' ? 'Select Merchant (Sell)' : `Merchants in ${selectedCountryName || 'Region'}`,
       headerRight: () => (
         <TouchableOpacity 
-          onPress={() => navigation.navigate('SelectCountry')}
+          onPress={() => navigation.push('SelectCountry', { mode: mode || 'deposit' })}
           className="flex-row items-center bg-surface px-3 py-1.5 rounded-full border border-slate-800"
         >
           <Globe color="#76b33a" size={14} />
@@ -67,7 +67,7 @@ const AMerchants = ({ route, navigation }: Props) => {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, selectedCountryName]);
+  }, [navigation, selectedCountryName, mode]);
 
   const renderMerchant = ({ item, index }: { item: any, index: number }) => {
     const inventory = item.merchantInventory || 0;
@@ -195,7 +195,7 @@ const AMerchants = ({ route, navigation }: Props) => {
               title={permissionError ? "Try Again" : "Change Region"} 
               variant="outline" 
               className="mt-8 border-slate-800 w-full"
-              onPress={() => permissionError ? loadMerchants() : navigation.navigate('SelectCountry')}
+              onPress={() => permissionError ? loadMerchants() : navigation.push('SelectCountry', { mode })}
             />
           </View>
         )}

@@ -13,6 +13,7 @@ import AdminDashboard from '../screens/Admin/AdminDashboard';
 import AdminDetailList from '../screens/Admin/AdminDetailList';
 import AdminUserDetails from '../screens/Admin/AdminUserDetails';
 import AdminMerchantRequests from '../screens/Admin/AdminMerchantRequests';
+import AdminUserRequests from '../screens/Admin/AdminUserRequests';
 import RequestFunds from '../screens/Home/RequestFunds';
 import DepositAmount from '../screens/Home/DepositAmount';
 import WithdrawAmount from '../screens/Home/WithdrawAmount';
@@ -21,6 +22,7 @@ import MerchantOngoingTransactions from '../screens/Merchant/OngoingTransactions
 import TransactionStatus from '../screens/Home/TransactionStatus';
 import Notifications from '../screens/Home/Notifications';
 import Receipt from '../screens/Transactions/Receipt';
+import TransactionChat from '../screens/Transactions/TransactionChat';
 import { RootStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -105,6 +107,11 @@ export const HomeStack = () => {
         options={{ title: 'Merchant Applications', headerShown: false }}
       />
       <Stack.Screen 
+        name="AdminUserRequests" 
+        component={AdminUserRequests} 
+        options={{ title: 'User KYC Requests', headerShown: false }}
+      />
+      <Stack.Screen 
         name="RequestFunds" 
         component={RequestFunds} 
         options={{ title: 'Request Credits' }}
@@ -143,6 +150,11 @@ export const HomeStack = () => {
         name="Notifications" 
         component={Notifications} 
         options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="TransactionChat" 
+        component={TransactionChat} 
+        options={({ route }: any) => ({ title: `Chat with ${route.params?.otherPartyName || 'User'}` })}
       />
     </Stack.Navigator>
   );

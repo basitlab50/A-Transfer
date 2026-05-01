@@ -62,6 +62,7 @@ const QuickTransferAmount = ({ route, navigation }: any) => {
   const [momoName, setMomoName] = useState('');
 
   const isBridge = baseCredits > balance;
+  const amountNeeded = isBridge ? baseCredits - balance : 0;
 
   const handleProcessSubmit = async () => {
     if (payoutMethod === 'bank' && (!bankName || !accountNo)) {
@@ -195,25 +196,38 @@ const QuickTransferAmount = ({ route, navigation }: any) => {
               </AppCard>
 
               {isBridge && (
-                <View className="bg-orange/10 p-5 rounded-3xl border border-orange/20 mb-8 flex-row items-center">
-                  <View className="w-10 h-10 rounded-full bg-orange/20 items-center justify-center mr-4">
-                    <Info color="#df7c27" size={20} />
+                <View className="bg-orange/10 p-5 rounded-[32px] border border-orange/20 mb-8">
+                  <View className="flex-row items-center mb-4">
+                    <View className="w-12 h-12 rounded-2xl bg-orange/20 items-center justify-center mr-4">
+                      <Wallet color="#df7c27" size={24} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-orange font-bold text-lg">Top-Up Required</Text>
+                      <Text className="text-textSecondary text-xs">
+                        You need <Text className="text-orange font-bold">A {amountNeeded.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text> more to complete this transfer.
+                      </Text>
+                    </View>
                   </View>
-                  <View className="flex-1">
-                    <Text className="text-orange font-bold text-sm">Top-Up Required</Text>
-                    <Text className="text-textSecondary text-[10px] leading-4">Your current balance is insufficient. We'll bridge the gap via a local merchant payout.</Text>
-                  </View>
+                  <AppButton 
+                    title="Top Up Now" 
+                    variant="orange" 
+                    size="small"
+                    className="w-full h-12 rounded-2xl"
+                    onPress={() => navigation.navigate('AMerchants', { country: senderCountryName, mode: 'deposit' })}
+                    icon={<ChevronRight color="#df7c27" size={16} />}
+                  />
                 </View>
               )}
 
               <AppButton 
-                title={isBridge ? "Bridge & Continue" : "Continue to Payout"} 
-                variant={isBridge ? "orange" : "accent"}
+                title={isBridge ? "Insufficient Balance" : "Continue to Payout"} 
+                variant={isBridge ? "secondary" : "accent"}
+                disabled={isBridge}
                 onPress={() => {
                   if (!inputValue || parseFloat(inputValue) <= 0) return Alert.alert('Error', 'Enter a valid amount');
                   setStep('details');
                 }}
-                icon={<ChevronRight color={isBridge ? "#df7c27" : "#76b33a"} size={20} />}
+                icon={<ChevronRight color={isBridge ? "#64748B" : "#76b33a"} size={20} />}
                 size="large"
               />
             </View>

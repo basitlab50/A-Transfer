@@ -2,7 +2,6 @@
   "expo": {
     "name": "A Transfer",
     "slug": "a-transfer",
-    "sdkVersion": "50.0.0",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

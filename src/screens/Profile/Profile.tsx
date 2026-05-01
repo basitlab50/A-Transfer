@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
-import { User, Settings, Bell, Shield, CreditCard, LogOut, ChevronRight, Globe, ShieldCheck } from 'lucide-react-native';
+import { View, Text, SafeAreaView, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
+import { User as UserIcon, Settings, Bell, Shield, CreditCard, LogOut, ChevronRight, Globe, ShieldCheck, Copy } from 'lucide-react-native';
 import { useWalletStore } from '../../store/useWalletStore';
+import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { AppCard } from '../../components/ui/AppCard';
 import { AppAlert } from '../../components/ui/AppAlert';
@@ -21,7 +22,7 @@ const ProfileItem = ({ icon, label, sublabel, onPress }: { icon: React.ReactNode
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
-  const { userCountry, availableCountries, isKYCVerified, signOut, userProfile } = useWalletStore();
+  const { userCountry, availableCountries, isKYCVerified, kycStatus, signOut, userProfile } = useWalletStore();
   const [logoutVisible, setLogoutVisible] = useState(false);
   
   const handleLogout = () => {
@@ -52,7 +53,7 @@ const ProfileScreen = () => {
         <View className="items-center mt-4 mb-8">
           <View className="w-24 h-24 rounded-full bg-surface border-2 border-luxury p-1 items-center justify-center mb-4">
             <View className="w-full h-full rounded-full bg-primary items-center justify-center">
-              <User color="#D4AF37" size={48} />
+              <UserIcon color="#D4AF37" size={48} />
             </View>
           </View>
           <View className="flex-row items-center">
@@ -63,7 +64,15 @@ const ProfileScreen = () => {
               </View>
             )}
           </View>
-          <Text className="text-textSecondary text-sm">AID: {userProfile?.aid || '...'}</Text>
+          <View className="flex-row items-center justify-center mt-1">
+            <Text className="text-textSecondary text-sm mr-2">AID: {userProfile?.aid || '...'}</Text>
+            <TouchableOpacity onPress={async () => {
+              await Clipboard.setStringAsync(userProfile?.aid || '');
+              Alert.alert('Copied!', 'Your A-Transfer Account ID has been copied.');
+            }}>
+              <Copy color="#94A3B8" size={14} />
+            </TouchableOpacity>
+          </View>
           {userProfile?.phone && <Text className="text-textSecondary text-xs mt-1">{userProfile.phone}</Text>}
         </View>
 
@@ -77,10 +86,24 @@ const ProfileScreen = () => {
             onPress={() => navigation.navigate('SelectCountry' as any, { mode: 'profile' })}
           />
           <ProfileItem 
-            icon={<Shield color={isKYCVerified ? "#76b33a" : "#94A3B8"} size={20} />} 
+            icon={<Shield color={isKYCVerified ? "#76b33a" : (kycStatus === 'rejected' ? "#EF4444" : "#94A3B8")} size={20} />} 
             label="Identity Verification" 
-            sublabel={isKYCVerified ? "Verified Account" : "Action Required"} 
-            onPress={() => navigation.navigate('IdentityVerification' as any)}
+            sublabel={
+              isKYCVerified ? "Verified Account" : 
+              (kycStatus === 'pending' ? "Verification in Progress" : 
+              (kycStatus === 'rejected' ? "Verification Failed - Re-upload" : "Action Required"))
+            } 
+            onPress={() => {
+              if (kycStatus === 'pending') {
+                Alert.alert("Verification in Progress", "Your documents are currently being reviewed. We will notify you once the process is complete.");
+                return;
+              }
+              if (isKYCVerified) {
+                Alert.alert("Account Verified", "Your identity has already been successfully verified.");
+                return;
+              }
+              navigation.navigate('IdentityVerification' as any);
+            }}
           />
           <View className="h-[1px] bg-slate-800 mx-4" />
           <ProfileItem icon={<Settings color="#94A3B8" size={20} />} label="Personal Information" sublabel="Update name, email, and phone" />
