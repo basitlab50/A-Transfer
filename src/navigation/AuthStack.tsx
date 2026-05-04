@@ -5,6 +5,8 @@ import Login from '../screens/Auth/Login';
 import Register from '../screens/Auth/Register';
 import ForgotPassword from '../screens/Auth/ForgotPassword';
 import ResetPassword from '../screens/Auth/ResetPassword';
+import VerifyOtp from '../screens/Auth/VerifyOtp';
+import EmailVerification from '../screens/Auth/EmailVerification';
 import { RootStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -22,6 +24,8 @@ export const AuthStack = () => {
       <Stack.Screen name="Register" component={Register} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
+      <Stack.Screen name="VerifyOtp" component={VerifyOtp} />
+      <Stack.Screen name="EmailVerification" component={EmailVerification} />
     </Stack.Navigator>
   );
 };

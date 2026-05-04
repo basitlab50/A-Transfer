@@ -5,11 +5,12 @@ import { MainTabs } from './MainTabs';
 
 export const RootNavigator = () => {
   const isAuthenticated = useWalletStore(state => state.isAuthenticated);
+  const isOtpVerified = useWalletStore(state => state.isOtpVerified);
   const initializeAuth = useWalletStore(state => state.initializeAuth);
 
   useEffect(() => {
     initializeAuth();
   }, []);
 
-  return isAuthenticated ? <MainTabs /> : <AuthStack />;
+  return (isAuthenticated && isOtpVerified) ? <MainTabs /> : <AuthStack />;
 };

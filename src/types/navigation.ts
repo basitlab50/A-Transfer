@@ -16,6 +16,8 @@ export type RootStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   ResetPassword: { email: string };
+  VerifyOtp: { userData: any };
+  EmailVerification: { email: string };
   RequestFunds: undefined;
   MerchantOnboarding: undefined;
   AdminDashboard: undefined;

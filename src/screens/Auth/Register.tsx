@@ -6,6 +6,7 @@ import { RegisterNavigationProp } from '../../types/navigation';
 import { useWalletStore } from '../../store/useWalletStore';
 import { AppButton } from '../../components/ui/AppButton';
 import { AppAlert } from '../../components/ui/AppAlert';
+import { verificationService } from '../../services/verificationService';
 
 interface Props {
   navigation: RegisterNavigationProp;
@@ -15,25 +16,48 @@ const Register = ({ navigation }: Props) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedCountryCode, setSelectedCountryCode] = useState('GH');
+  const [selectedCountryCode, setSelectedCountryCode] = useState('');
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState<{ title: string, message: string } | null>(null);
   
   const { signUp, availableCountries } = useWalletStore();
-  const selectedCountry = availableCountries.find(c => c.code === selectedCountryCode) || availableCountries[0];
+  const selectedCountry = availableCountries.find(c => c.code === selectedCountryCode);
 
   const handleRegister = async () => {
     if (name && email && password && phone && selectedCountry) {
       try {
         const fullPhone = `${selectedCountry.phoneCode}${phone}`;
-        await signUp(name, email, password, fullPhone, selectedCountry.name);
+        
+        // Trigger OTP before actual signup
+        const success = await verificationService.sendSmsOtp(fullPhone);
+        if (success) {
+          navigation.navigate('VerifyOtp', {
+            userData: {
+              name,
+              email,
+              password,
+              phone: fullPhone,
+              country: selectedCountry.name
+            }
+          });
+        }
       } catch (err: any) {
         setError({ 
-          title: 'Registration Failed', 
-          message: err.message || 'Could not create account. Please try again.' 
+          title: 'Verification Failed', 
+          message: 'Could not send verification code. Please try again.' 
         });
       }
+    } else if (!selectedCountry) {
+      setError({ 
+        title: 'Country Required', 
+        message: 'Please select your country to continue.' 
+      });
+    } else {
+      setError({ 
+        title: 'Missing Info', 
+        message: 'Please fill in all fields to create your account.' 
+      });
     }
   };
 
@@ -103,8 +127,17 @@ const Register = ({ navigation }: Props) => {
                 className="flex-row items-center justify-between bg-surface p-5 rounded-[24px] border border-slate-800"
               >
                 <View className="flex-row items-center">
-                  <Text className="text-2xl mr-3">{selectedCountry.flag}</Text>
-                  <Text className="text-textPrimary font-semibold text-lg">{selectedCountry.name}</Text>
+                  {selectedCountry ? (
+                    <>
+                      <Text className="text-2xl mr-3">{selectedCountry.flag}</Text>
+                      <Text className="text-textPrimary font-semibold text-lg">{selectedCountry.name}</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Globe color="#94A3B8" size={20} className="mr-3" />
+                      <Text className="text-slate-500 font-semibold text-lg">Select your country</Text>
+                    </>
+                  )}
                 </View>
                 <ChevronLeft 
                   color="#76b33a" 
@@ -146,11 +179,15 @@ const Register = ({ navigation }: Props) => {
               <Text className="text-textSecondary text-xs font-bold uppercase tracking-widest mb-3 ml-1">Phone Number</Text>
               <View className="flex-row items-center bg-surface p-5 rounded-[24px] border border-slate-800">
                 <View className="flex-row items-center pr-4 border-r border-slate-800">
-                  <Text className="text-accent font-bold text-base">{selectedCountry.phoneCode}</Text>
+                  {selectedCountry ? (
+                    <Text className="text-accent font-bold text-base">{selectedCountry.phoneCode}</Text>
+                  ) : (
+                    <Globe color="#475569" size={16} />
+                  )}
                 </View>
                 <TextInput 
                   className="flex-1 ml-4 text-textPrimary font-semibold text-lg"
-                  placeholder="50 123 4567"
+                  placeholder={selectedCountry ? "50 123 4567" : "Phone Number"}
                   placeholderTextColor="#475569"
                   keyboardType="phone-pad"
                   value={phone}

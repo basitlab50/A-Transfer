@@ -6,7 +6,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut as firebaseSignOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendEmailVerification
 } from 'firebase/auth';
 import { 
   doc, 
@@ -79,6 +80,7 @@ interface WalletState {
   merchantEarnings: number;
   isKYCVerified: boolean;
   isAuthenticated: boolean;
+  isOtpVerified: boolean;
   isAdmin: boolean;
   isAdminMode: boolean;
   userProfile: { name: string, email: string, aid: string, phone: string, country: string, sellingRate?: number, buyingRate?: number } | null;
@@ -143,6 +145,7 @@ interface WalletState {
   updateMerchantRate: (rate: number) => Promise<void>;
   updateMerchantBuyRate: (rate: number) => Promise<void>;
   handleKYCResponse: (uid: string, approved: boolean) => Promise<void>;
+  setOtpVerified: (verified: boolean) => void;
 }
 
 
@@ -180,6 +183,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   isAcceptingSell: true,
   isKYCVerified: false,
   isAuthenticated: false,
+  isOtpVerified: false,
   isAdmin: false,
   isAdminMode: false,
   userProfile: null,
@@ -263,9 +267,36 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       await updateDoc(doc(db, 'users', auth.currentUser.uid), { isAcceptingSell: newStatus });
     }
   },
-  signIn: async (email, password) => {
+  signIn: async (identifier, password) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      let email = identifier;
+
+      // Check if identifier is an email (contains @)
+      if (!identifier.includes('@')) {
+        // Try searching by AID or Phone in Firestore
+        const usersRef = collection(db, 'users');
+        
+        // Try AID search first
+        const aidQuery = query(usersRef, where('aid', '==', identifier));
+        const aidSnap = await getDocs(aidQuery);
+        
+        if (!aidSnap.empty) {
+          email = aidSnap.docs[0].data().email;
+        } else {
+          // Try Phone search
+          const phoneQuery = query(usersRef, where('phone', '==', identifier));
+          const phoneSnap = await getDocs(phoneQuery);
+          
+          if (!phoneSnap.empty) {
+            email = phoneSnap.docs[0].data().email;
+          } else {
+            throw new Error('User not found with the provided Phone or AID.');
+          }
+        }
+      }
+
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      return userCredential.user;
     } catch (error: any) {
       console.error('Sign In Error:', error.message);
       throw error;
@@ -291,6 +322,9 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       
       // Save to Firestore
       await setDoc(doc(db, 'users', user.uid), userProfile);
+
+      // Send Email Verification
+      await sendEmailVerification(user);
     } catch (error: any) {
       console.error('Sign Up Error:', error.message);
       throw error;
@@ -299,6 +333,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   signOut: async () => {
     try {
       await firebaseSignOut(auth);
+      set({ isAuthenticated: false, isOtpVerified: false, userProfile: null });
     } catch (error: any) {
       console.error('Sign Out Error:', error.message);
     }
@@ -956,6 +991,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         if (unsubscribeOngoingMerchant) unsubscribeOngoingMerchant();
         set({ 
           isAuthenticated: false, 
+          isOtpVerified: false,
           userProfile: null, 
           balance: 0, 
           activeTransaction: null,
@@ -1008,4 +1044,5 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       };
     });
   },
+  setOtpVerified: (verified) => set({ isOtpVerified: verified }),
 }));
